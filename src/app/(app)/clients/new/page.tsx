@@ -1,12 +1,14 @@
 import { PageHeader } from "@/components/nav/page-header";
-import { ClientForm } from "@/components/clients/client-form";
-import { createClient } from "@/lib/actions/clients";
+import { IntakeForm } from "@/components/intake/intake-form";
+import { createClientFromIntake } from "@/lib/actions/intake";
 
 export default function NewClientPage() {
   return (
     <>
       <PageHeader title="New client" back="/clients" />
-      <ClientForm action={createClient} submitLabel="Create client" />
+      <div className="px-4 pt-3">
+        <IntakeForm onSubmit={createClientFromIntake} />
+      </div>
     </>
   );
 }

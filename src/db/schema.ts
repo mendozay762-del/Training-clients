@@ -23,9 +23,21 @@ const updatedAt = timestamp("updated_at", { withTimezone: true })
 export const clients = pgTable("clients", {
   id,
   name: text("name").notNull(),
+  preferredName: text("preferred_name"),
+  dateOfBirth: date("date_of_birth"),
   email: text("email"),
   phone: text("phone"),
+  city: text("city"),
+  state: text("state"),
+  address: text("address"),
+  coachingType: text("coaching_type").notNull().default("in_person"),
+  referralSource: text("referral_source"),
   startDate: date("start_date"),
+  targetStartDate: date("target_start_date"),
+  budgetRange: text("budget_range"),
+  commPreference: text("comm_preference"),
+  commPreferenceOther: text("comm_preference_other"),
+  commPreferenceHandle: text("comm_preference_handle"),
   goalsSummary: text("goals_summary"),
   active: boolean("active").notNull().default(true),
   createdAt,
@@ -99,6 +111,9 @@ export const bodyStats = pgTable(
       .references(() => clients.id, { onDelete: "cascade" }),
     weekStart: date("week_start").notNull(),
     weightLbs: numeric("weight_lbs", { precision: 5, scale: 2 }),
+    waistIn: numeric("waist_in", { precision: 5, scale: 2 }),
+    chestIn: numeric("chest_in", { precision: 5, scale: 2 }),
+    hipsIn: numeric("hips_in", { precision: 5, scale: 2 }),
     sleepHoursAvg: numeric("sleep_hours_avg", { precision: 3, scale: 1 }),
     wellness: integer("wellness"),
     notes: text("notes"),
@@ -176,8 +191,103 @@ export const nutritionNotes = pgTable(
   }),
 );
 
+export const clientIntake = pgTable("client_intake", {
+  id,
+  clientId: uuid("client_id")
+    .notNull()
+    .unique()
+    .references(() => clients.id, { onDelete: "cascade" }),
+
+  emergencyName: text("emergency_name"),
+  emergencyRelationship: text("emergency_relationship"),
+  emergencyPhone: text("emergency_phone"),
+
+  preferredGymLocation: text("preferred_gym_location"),
+  maxTravelDistance: text("max_travel_distance"),
+  gymAccess: text("gym_access"),
+  equipmentAvailable: text("equipment_available"),
+  daysPerWeek: integer("days_per_week"),
+  sessionLengthMin: integer("session_length_min"),
+  preferredTimeOfDay: text("preferred_time_of_day"),
+
+  primaryGoal: text("primary_goal"),
+  primaryGoalOther: text("primary_goal_other"),
+  secondaryGoal: text("secondary_goal"),
+  goalReason: text("goal_reason"),
+  goalTimeline: text("goal_timeline"),
+  goalTimelineOther: text("goal_timeline_other"),
+  measureProgress: text("measure_progress").array(),
+  measureProgressOther: text("measure_progress_other"),
+  commitmentLevel: integer("commitment_level"),
+
+  activityLevel: text("activity_level"),
+  yearsExperience: text("years_experience"),
+  currentlyTraining: boolean("currently_training"),
+  currentTrainingDays: integer("current_training_days"),
+  currentProgram: text("current_program"),
+  currentProgramDuration: text("current_program_duration"),
+  workedWithTrainer: boolean("worked_with_trainer"),
+  trainerLiked: text("trainer_liked"),
+  trainerDisliked: text("trainer_disliked"),
+  exercisesEnjoy: text("exercises_enjoy"),
+  exercisesAvoid: text("exercises_avoid"),
+  squatLbs: numeric("squat_lbs", { precision: 6, scale: 2 }),
+  benchLbs: numeric("bench_lbs", { precision: 6, scale: 2 }),
+  deadliftLbs: numeric("deadlift_lbs", { precision: 6, scale: 2 }),
+  ohpLbs: numeric("ohp_lbs", { precision: 6, scale: 2 }),
+  rowLbs: numeric("row_lbs", { precision: 6, scale: 2 }),
+
+  nonNegotiableMovements: text("non_negotiable_movements"),
+  preLiftRoutine: text("pre_lift_routine"),
+  splitPreference: text("split_preference"),
+  proximityToFailure: text("proximity_to_failure"),
+
+  parqHeartCondition: boolean("parq_heart_condition"),
+  parqChestPainActive: boolean("parq_chest_pain_active"),
+  parqChestPainRest: boolean("parq_chest_pain_rest"),
+  parqDizziness: boolean("parq_dizziness"),
+  parqBoneJoint: boolean("parq_bone_joint"),
+  parqBpHeartMeds: boolean("parq_bp_heart_meds"),
+  parqOtherReason: boolean("parq_other_reason"),
+  medicalConditions: text("medical_conditions"),
+  medications: text("medications"),
+  surgeries5yr: text("surgeries_5yr"),
+  pastInjuries: text("past_injuries"),
+  currentPain: text("current_pain"),
+  doctorCleared: text("doctor_cleared"),
+
+  sleepHours: numeric("sleep_hours", { precision: 3, scale: 1 }),
+  sleepQuality: integer("sleep_quality"),
+  stressLevel: integer("stress_level"),
+  workActivity: text("work_activity"),
+  workSchedule: text("work_schedule"),
+  outsideCommitments: text("outside_commitments"),
+
+  dietaryPattern: text("dietary_pattern"),
+  dietaryPatternOther: text("dietary_pattern_other"),
+  foodAllergies: text("food_allergies"),
+  dietaryRestrictions: text("dietary_restrictions"),
+  typicalDayFood: text("typical_day_food"),
+  waterPerDay: text("water_per_day"),
+  alcoholPerWeek: numeric("alcohol_per_week", { precision: 4, scale: 1 }),
+  caffeinePerDay: text("caffeine_per_day"),
+  supplements: text("supplements"),
+  biggestNutritionChallenge: text("biggest_nutrition_challenge"),
+
+  anythingElse: text("anything_else"),
+  sharesMeasurements: boolean("shares_measurements"),
+
+  acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
+  acknowledgedName: text("acknowledged_name"),
+
+  createdAt,
+  updatedAt,
+});
+
 export type Client = typeof clients.$inferSelect;
 export type NewClient = typeof clients.$inferInsert;
+export type ClientIntake = typeof clientIntake.$inferSelect;
+export type NewClientIntake = typeof clientIntake.$inferInsert;
 export type Workout = typeof workouts.$inferSelect;
 export type WorkoutExercise = typeof workoutExercises.$inferSelect;
 export type WorkoutSet = typeof workoutSets.$inferSelect;
