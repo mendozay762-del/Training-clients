@@ -92,8 +92,6 @@ export default async function ClientDetailPage({
             label="Next Session"
             title={formatSessionTime(new Date(nextSession.startsAt))}
             meta={nextSession.location ?? undefined}
-            actionLabel="View"
-            href={`/sessions/${nextSession.id}`}
           />
         ) : (
           <div className="rounded-card bg-card p-4 text-sm text-text-secondary">

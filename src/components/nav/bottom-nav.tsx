@@ -2,13 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users, CalendarDays, BarChart3, Settings } from "lucide-react";
+import { Users, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TABS = [
   { href: "/clients", label: "Clients", icon: Users },
-  { href: "/sessions", label: "Sessions", icon: CalendarDays },
-  { href: "/stats", label: "Stats", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
