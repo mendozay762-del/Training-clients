@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-base: 10 10 10;
+    --bg-card: 22 22 22;
+    --bg-card-hover: 31 31 31;
+    --border-subtle: 255 255 255;
+    --text-primary: 250 250 250;
+    --text-secondary: 163 163 163;
+    --text-tertiary: 107 107 107;
+    --accent-blue: 59 130 246;
+    --accent-green: 34 197 94;
+    --accent-red: 239 68 68;
+  }
+
+  html {
+    color-scheme: dark;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-base text-text-primary font-sans antialiased;
+    font-feature-settings: "ss01" on, "cv11" on;
+  }
+
+  button,
+  [role="button"] {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  input,
+  textarea,
+  select {
+    @apply bg-card border border-border-subtle/60 rounded-btn;
+  }
+}
+
+@layer utilities {
+  .border-subtle {
+    border-color: rgb(var(--border-subtle) / 0.06);
+  }
+
+  .safe-pb {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-pt {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .tabnums {
+    font-variant-numeric: tabular-nums;
+  }
+}
