@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export const WAIVER_VERSION = "v1-draft-2026-05";
+
 export const COACHING_TYPES = ["in_person", "remote", "hybrid"] as const;
 export const GYM_ACCESS = ["home_gym", "commercial", "outdoor", "none"] as const;
 export const COMM_PREFS = [

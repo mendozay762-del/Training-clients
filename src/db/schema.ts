@@ -280,6 +280,9 @@ export const clientIntake = pgTable("client_intake", {
   acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
   acknowledgedName: text("acknowledged_name"),
 
+  waiverVersion: text("waiver_version"),
+  waiverAcceptedAt: timestamp("waiver_accepted_at", { withTimezone: true }),
+
   createdAt,
   updatedAt,
 });
