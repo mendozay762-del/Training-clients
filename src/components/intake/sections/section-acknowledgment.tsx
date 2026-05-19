@@ -82,14 +82,12 @@ export function SectionAcknowledgment() {
         <TextField
           label="Name"
           hint="Auto-filled from above; edit if needed"
-          required
           {...register("acknowledgedName")}
           error={errors.acknowledgedName?.message}
         />
         <TextField
           label="Date"
           hint="Today; edit to match form date if different"
-          required
           type="date"
           {...register("acknowledgedDate")}
           error={errors.acknowledgedDate?.message}

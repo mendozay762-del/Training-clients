@@ -34,7 +34,6 @@ export function Section1Personal() {
       <TextField
         label="Date of birth"
         number={3}
-        required
         type="date"
         {...register("dateOfBirth")}
         error={errors.dateOfBirth?.message}
@@ -62,7 +61,6 @@ export function Section1Personal() {
         <TextField
           label="Full address"
           number={7}
-          required
           hint="For in-person sessions at home or a private location"
           multiline
           rows={2}
@@ -76,7 +74,6 @@ export function Section1Personal() {
           <TextField
             label="Emergency contact — name"
             number={8}
-            required
             {...field}
             value={field.value ?? ""}
             error={fieldState.error?.message}
@@ -89,7 +86,6 @@ export function Section1Personal() {
           <TextField
             label="Emergency contact — relationship to you"
             number={9}
-            required
             {...field}
             value={field.value ?? ""}
             error={fieldState.error?.message}
@@ -102,7 +98,6 @@ export function Section1Personal() {
           <TextField
             label="Emergency contact — phone number"
             number={10}
-            required
             type="tel"
             {...field}
             value={field.value ?? ""}

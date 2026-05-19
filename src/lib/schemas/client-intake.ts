@@ -90,23 +90,18 @@ export const intakeFormSchema = z
   .object({
     name: z.string().trim().min(1, "Name is required"),
     preferredName: optStr,
-    dateOfBirth: z.string().min(1, "Date of birth is required"),
+    dateOfBirth: optStr,
     email: optStr,
     phone: optStr,
     city: optStr,
     state: optStr,
     address: optStr,
-    emergencyName: z.string().trim().min(1, "Emergency contact name required"),
-    emergencyRelationship: z
-      .string()
-      .trim()
-      .min(1, "Relationship required"),
-    emergencyPhone: z.string().trim().min(1, "Emergency phone required"),
+    emergencyName: optStr,
+    emergencyRelationship: optStr,
+    emergencyPhone: optStr,
     referralSource: optStr,
 
-    coachingType: z.enum(COACHING_TYPES, {
-      required_error: "Coaching type required",
-    }),
+    coachingType: z.enum(COACHING_TYPES).default("in_person"),
     preferredGymLocation: optStr,
     maxTravelDistance: optStr,
     gymAccess: z.array(z.enum(GYM_ACCESS)).default([]),
@@ -152,13 +147,13 @@ export const intakeFormSchema = z
     splitPreference: z.array(z.enum(SPLITS)).default([]),
     proximityToFailure: z.enum(PROXIMITY).optional(),
 
-    parqHeartCondition: z.boolean({ required_error: "Required" }),
-    parqChestPainActive: z.boolean({ required_error: "Required" }),
-    parqChestPainRest: z.boolean({ required_error: "Required" }),
-    parqDizziness: z.boolean({ required_error: "Required" }),
-    parqBoneJoint: z.boolean({ required_error: "Required" }),
-    parqBpHeartMeds: z.boolean({ required_error: "Required" }),
-    parqOtherReason: z.boolean({ required_error: "Required" }),
+    parqHeartCondition: z.boolean().optional(),
+    parqChestPainActive: z.boolean().optional(),
+    parqChestPainRest: z.boolean().optional(),
+    parqDizziness: z.boolean().optional(),
+    parqBoneJoint: z.boolean().optional(),
+    parqBpHeartMeds: z.boolean().optional(),
+    parqOtherReason: z.boolean().optional(),
     medicalConditions: optStr,
     medications: optStr,
     surgeries5yr: optStr,
@@ -191,31 +186,12 @@ export const intakeFormSchema = z
     chestIn: optNum,
     hipsIn: optNum,
 
-    ackInfoAccurate: z.literal(true, {
-      errorMap: () => ({ message: "Please confirm" }),
-    }),
-    ackLiability: z.literal(true, {
-      errorMap: () => ({ message: "Please confirm" }),
-    }),
-    ackOpenCommunication: z.literal(true, {
-      errorMap: () => ({ message: "Please confirm" }),
-    }),
-    acknowledgedName: z.string().trim().min(1, "Name required"),
-    acknowledgedDate: z.string().min(1, "Date required"),
-  })
-  .refine((d) => d.email || d.phone, {
-    message: "Please provide at least email or phone",
-    path: ["email"],
-  })
-  .refine(
-    (d) => {
-      if (d.coachingType === "in_person" || d.coachingType === "hybrid") {
-        return Boolean(d.address && d.address.length > 0);
-      }
-      return true;
-    },
-    { message: "Address required for in-person/hybrid", path: ["address"] },
-  );
+    ackInfoAccurate: z.boolean().optional(),
+    ackLiability: z.boolean().optional(),
+    ackOpenCommunication: z.boolean().optional(),
+    acknowledgedName: optStr,
+    acknowledgedDate: optStr,
+  });
 
 export type IntakeFormData = z.input<typeof intakeFormSchema>;
 export type IntakeFormParsed = z.output<typeof intakeFormSchema>;

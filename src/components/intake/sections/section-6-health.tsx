@@ -89,7 +89,6 @@ export function Section6Health() {
             <YesNoField
               number={q.number}
               label={q.label}
-              required
               value={(field.value as boolean | undefined) ?? null}
               onChange={field.onChange}
               error={fieldState.error?.message}

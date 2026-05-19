@@ -63,7 +63,6 @@ export function Section2Logistics() {
         render={({ field, fieldState }) => (
           <SingleSelectField
             number={12}
-            required
             label="Are you looking for in-person, remote, or hybrid training?"
             options={coachingOptions}
             value={field.value ?? null}

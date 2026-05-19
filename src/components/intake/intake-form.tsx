@@ -29,7 +29,7 @@ interface IntakeFormProps {
 export function IntakeForm({
   defaultValues,
   onSubmit,
-  submitLabel = "Create Client",
+  submitLabel = "Save Client",
 }: IntakeFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -88,7 +88,7 @@ export function IntakeForm({
 
   function handleInvalid() {
     setSubmitError(
-      "Please fix the highlighted fields. Required questions are marked with a red asterisk.",
+      "Couldn't save — please check the highlighted fields and try again.",
     );
     setTimeout(() => {
       const first = document.querySelector("[aria-invalid='true']");
