@@ -95,6 +95,7 @@ export const workoutSets = pgTable(
     reps: integer("reps").notNull(),
     weightLbs: numeric("weight_lbs", { precision: 6, scale: 2 }),
     rpe: numeric("rpe", { precision: 3, scale: 1 }),
+    rir: integer("rir"),
     isWarmup: boolean("is_warmup").notNull().default(false),
   },
   (t) => ({

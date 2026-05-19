@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   clients,
@@ -6,6 +6,8 @@ import {
   clientMessages,
   bodyStats,
   workouts,
+  workoutExercises,
+  workoutSets,
   sessions,
   goals,
   nutritionNotes,
@@ -164,6 +166,65 @@ export async function listMessages(clientId: string) {
     .from(clientMessages)
     .where(eq(clientMessages.clientId, clientId))
     .orderBy(desc(clientMessages.occurredAt));
+}
+
+export async function listWorkouts(clientId: string) {
+  const rows = await db
+    .select({
+      id: workouts.id,
+      performedOn: workouts.performedOn,
+      notes: workouts.notes,
+      exerciseCount: sql<number>`(
+        select count(*)::int
+        from ${workoutExercises}
+        where ${workoutExercises.workoutId} = ${workouts.id}
+      )`,
+      setCount: sql<number>`(
+        select count(*)::int
+        from ${workoutSets}
+        inner join ${workoutExercises}
+          on ${workoutSets.exerciseId} = ${workoutExercises.id}
+        where ${workoutExercises.workoutId} = ${workouts.id}
+      )`,
+    })
+    .from(workouts)
+    .where(eq(workouts.clientId, clientId))
+    .orderBy(desc(workouts.performedOn), desc(workouts.createdAt));
+  return rows;
+}
+
+export async function getWorkoutDetail(workoutId: string) {
+  const [workout] = await db
+    .select()
+    .from(workouts)
+    .where(eq(workouts.id, workoutId))
+    .limit(1);
+  if (!workout) return null;
+
+  const exercises = await db
+    .select()
+    .from(workoutExercises)
+    .where(eq(workoutExercises.workoutId, workoutId))
+    .orderBy(asc(workoutExercises.position));
+
+  const exerciseIds = exercises.map((e) => e.id);
+  const sets = exerciseIds.length
+    ? await db
+        .select()
+        .from(workoutSets)
+        .where(
+          sql`${workoutSets.exerciseId} in ${exerciseIds}`,
+        )
+        .orderBy(asc(workoutSets.setIndex))
+    : [];
+
+  return {
+    workout,
+    exercises: exercises.map((ex) => ({
+      ...ex,
+      sets: sets.filter((s) => s.exerciseId === ex.id),
+    })),
+  };
 }
 
 export async function listBodyStats(clientId: string) {
