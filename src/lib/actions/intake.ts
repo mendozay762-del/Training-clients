@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { clients, clientIntake, bodyStats } from "@/db/schema";
 import {
+  WAIVER_VERSION,
   intakeFormSchema,
   type IntakeFormData,
   type IntakeFormParsed,
@@ -147,10 +148,13 @@ export async function createClientFromIntake(
       return { ok: false, error: "Failed to create client" };
     }
 
+    const now = new Date();
     await db.insert(clientIntake).values({
       clientId: client.id,
       ...intakeValuesFromForm(parsed),
-      acknowledgedAt: parsed.acknowledgedName ? new Date() : null,
+      acknowledgedAt: parsed.acknowledgedName ? now : null,
+      waiverVersion: parsed.ackLiability ? WAIVER_VERSION : null,
+      waiverAcceptedAt: parsed.ackLiability ? now : null,
     });
 
     const hasMeasurements =
@@ -212,27 +216,40 @@ export async function updateClientFromIntake(
     }
 
     const existing = await db
-      .select({ id: clientIntake.id, acknowledgedAt: clientIntake.acknowledgedAt })
+      .select({
+        id: clientIntake.id,
+        acknowledgedAt: clientIntake.acknowledgedAt,
+        waiverVersion: clientIntake.waiverVersion,
+        waiverAcceptedAt: clientIntake.waiverAcceptedAt,
+      })
       .from(clientIntake)
       .where(eq(clientIntake.clientId, clientId))
       .limit(1);
 
+    const now = new Date();
+
     if (existing.length > 0) {
+      const prior = existing[0];
+      const acceptingNow = parsed.ackLiability === true && !prior.waiverAcceptedAt;
       await db
         .update(clientIntake)
         .set({
           ...intakeValuesFromForm(parsed),
           acknowledgedAt:
-            existing[0].acknowledgedAt ??
-            (parsed.acknowledgedName ? new Date() : null),
-          updatedAt: new Date(),
+            prior.acknowledgedAt ??
+            (parsed.acknowledgedName ? now : null),
+          waiverVersion: acceptingNow ? WAIVER_VERSION : prior.waiverVersion,
+          waiverAcceptedAt: acceptingNow ? now : prior.waiverAcceptedAt,
+          updatedAt: now,
         })
         .where(eq(clientIntake.clientId, clientId));
     } else {
       await db.insert(clientIntake).values({
         clientId,
         ...intakeValuesFromForm(parsed),
-        acknowledgedAt: parsed.acknowledgedName ? new Date() : null,
+        acknowledgedAt: parsed.acknowledgedName ? now : null,
+        waiverVersion: parsed.ackLiability ? WAIVER_VERSION : null,
+        waiverAcceptedAt: parsed.ackLiability ? now : null,
       });
     }
 

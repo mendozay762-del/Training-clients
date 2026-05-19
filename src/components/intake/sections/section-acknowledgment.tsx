@@ -6,6 +6,11 @@ import { IntakeSectionCard } from "../intake-section-card";
 import { TextField } from "../fields/text-field";
 import { cn } from "@/lib/utils";
 import type { IntakeFormData } from "@/lib/schemas/client-intake";
+import {
+  WAIVER_DRAFT_NOTICE,
+  WAIVER_SECTIONS,
+  WAIVER_TITLE,
+} from "@/lib/waiver-text";
 
 const acknowledgments: Array<{
   name: "ackInfoAccurate" | "ackLiability" | "ackOpenCommunication";
@@ -19,7 +24,7 @@ const acknowledgments: Array<{
   {
     name: "ackLiability",
     label:
-      "I will receive and sign a separate liability waiver before my first training session.",
+      "I have read the liability waiver above, I understand its terms, and I accept them.",
   },
   {
     name: "ackOpenCommunication",
@@ -41,6 +46,33 @@ export function SectionAcknowledgment() {
       title="Acknowledgment"
       hint="By submitting this form, I confirm that:"
     >
+      <div className="flex flex-col gap-3 rounded-btn border border-border-subtle/40 bg-card/60 p-4">
+        <div className="flex flex-col gap-1">
+          <div className="text-xs font-medium uppercase tracking-wider text-text-secondary">
+            Liability waiver
+          </div>
+          <h3 className="text-base font-semibold text-text-primary">
+            {WAIVER_TITLE}
+          </h3>
+        </div>
+        <div className="max-h-72 overflow-y-auto rounded-btn border border-border-subtle/40 bg-card p-4 text-sm leading-relaxed text-text-secondary">
+          <div className="flex flex-col gap-3">
+            {WAIVER_SECTIONS.map((section) => (
+              <div key={section.heading} className="flex flex-col gap-1">
+                <div className="font-semibold text-text-primary">
+                  {section.heading}
+                </div>
+                {section.body.map((para, idx) => (
+                  <p key={idx}>{para}</p>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+        <p className="text-xs italic text-text-secondary">
+          {WAIVER_DRAFT_NOTICE}
+        </p>
+      </div>
       <div className="flex flex-col gap-2">
         {acknowledgments.map((a) => (
           <Controller
@@ -81,7 +113,7 @@ export function SectionAcknowledgment() {
       <div className="grid grid-cols-2 gap-3">
         <TextField
           label="Name"
-          hint="Auto-filled from above; edit if needed"
+          hint="Client's full legal name as it should appear on the signed waiver"
           {...register("acknowledgedName")}
           error={errors.acknowledgedName?.message}
         />
