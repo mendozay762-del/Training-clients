@@ -31,7 +31,15 @@ export function IntakeWithViewer() {
       </div>
 
       {overlayOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-base md:hidden">
+        <div
+          className="fixed inset-0 z-50 flex flex-col bg-base md:hidden"
+          style={{
+            paddingTop: "env(safe-area-inset-top)",
+            paddingLeft: "env(safe-area-inset-left)",
+            paddingRight: "env(safe-area-inset-right)",
+            paddingBottom: "env(safe-area-inset-bottom)",
+          }}
+        >
           <header className="flex items-center justify-between border-b border-subtle px-4 py-3">
             <h2 className="text-base font-semibold">Questionnaire</h2>
             <button

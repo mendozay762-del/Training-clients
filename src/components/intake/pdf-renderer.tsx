@@ -35,6 +35,11 @@ export function PdfRenderer({
   const [numPages, setNumPages] = useState(0);
   const [containerWidth, setContainerWidth] = useState(0);
   const [scale, setScale] = useState(1);
+  const scaleRef = useRef(1);
+
+  useEffect(() => {
+    scaleRef.current = scale;
+  }, [scale]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -57,7 +62,7 @@ export function PdfRenderer({
     if (!el || !zoomEnabled) return;
     const pointers = new Map<number, { x: number; y: number }>();
     let initialDist = 0;
-    let initialScale = scale;
+    let initialScale = scaleRef.current;
 
     const dist = () => {
       const pts = Array.from(pointers.values());
@@ -71,7 +76,7 @@ export function PdfRenderer({
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (pointers.size === 2) {
         initialDist = dist();
-        initialScale = scale;
+        initialScale = scaleRef.current;
       }
     };
     const onMove = (e: PointerEvent) => {
@@ -101,7 +106,7 @@ export function PdfRenderer({
       el.removeEventListener("pointerup", onUp);
       el.removeEventListener("pointercancel", onUp);
     };
-  }, [zoomEnabled, scale]);
+  }, [zoomEnabled]);
 
   const handleLoadSuccess = useCallback(
     ({ numPages: n }: { numPages: number }) => {

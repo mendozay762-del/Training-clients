@@ -66,6 +66,7 @@ export function QuestionnaireViewer({
   const [showPageIndicator, setShowPageIndicator] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const indicatorTimeoutRef = useRef<number | null>(null);
+  const loadIdRef = useRef(0);
 
   useEffect(() => {
     return () => {
@@ -73,8 +74,17 @@ export function QuestionnaireViewer({
     };
   }, [objectUrl]);
 
+  useEffect(() => {
+    return () => {
+      if (indicatorTimeoutRef.current) {
+        window.clearTimeout(indicatorTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const loadFile = useCallback(
     async (f: File) => {
+      const id = ++loadIdRef.current;
       setError(null);
       setRenderError(null);
       setDocxHtml(null);
@@ -105,12 +115,14 @@ export function QuestionnaireViewer({
           const { default: mammoth } = await import("mammoth/mammoth.browser");
           const arrayBuffer = await f.arrayBuffer();
           const result = await mammoth.convertToHtml({ arrayBuffer });
+          if (loadIdRef.current !== id) return;
           setDocxHtml(result.value);
         } catch (e) {
+          if (loadIdRef.current !== id) return;
           console.error(e);
           setRenderError("Couldn't read this .docx. Try converting to PDF.");
         } finally {
-          setIsConverting(false);
+          if (loadIdRef.current === id) setIsConverting(false);
         }
       }
     },
@@ -118,6 +130,7 @@ export function QuestionnaireViewer({
   );
 
   function clear() {
+    loadIdRef.current++;
     if (objectUrl) URL.revokeObjectURL(objectUrl);
     setFile(null);
     setKind("unsupported");
