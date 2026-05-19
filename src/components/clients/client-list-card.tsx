@@ -7,11 +7,19 @@ interface Props {
   id: string;
   name: string;
   subtitle?: string;
+  openActionCount?: number;
   href?: string;
   className?: string;
 }
 
-export function ClientListCard({ id, name, subtitle, href, className }: Props) {
+export function ClientListCard({
+  id,
+  name,
+  subtitle,
+  openActionCount,
+  href,
+  className,
+}: Props) {
   const target = href ?? `/clients/${id}`;
   return (
     <Link
@@ -23,8 +31,19 @@ export function ClientListCard({ id, name, subtitle, href, className }: Props) {
     >
       <ClientInitialsAvatar id={id} name={name} />
       <div className="min-w-0 flex-1">
-        <div className="truncate text-base font-semibold text-text-primary">
-          {name}
+        <div className="flex items-center gap-2">
+          <span className="truncate text-base font-semibold text-text-primary">
+            {name}
+          </span>
+          {openActionCount !== undefined && openActionCount > 0 && (
+            <span
+              className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-accent-amber px-1.5 text-[11px] font-semibold text-base"
+              aria-label={`${openActionCount} open action items`}
+              title={`${openActionCount} open action items`}
+            >
+              {openActionCount}
+            </span>
+          )}
         </div>
         {subtitle && (
           <div className="truncate text-sm text-text-secondary">{subtitle}</div>

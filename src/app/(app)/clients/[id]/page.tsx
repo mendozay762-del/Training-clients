@@ -63,6 +63,8 @@ export default async function ClientDetailPage({
     upcomingSessions,
     latestNutrition,
     recentWorkouts,
+    recentMessages,
+    openActionCount,
     waiver,
   } = data;
 
@@ -257,6 +259,34 @@ export default async function ClientDetailPage({
                   {n.bodyMd.length > 60
                     ? `${n.bodyMd.slice(0, 60)}…`
                     : n.bodyMd}
+                </span>
+              </div>
+            ))}
+        </SectionBlock>
+
+        <SectionBlock
+          label={
+            openActionCount > 0
+              ? `Messages · ${openActionCount} open`
+              : "Messages"
+          }
+          addHref={`/clients/${id}/messages`}
+          viewHref={`/clients/${id}/messages`}
+          count={recentMessages.length}
+          empty="No messages logged yet."
+        >
+          {recentMessages.length > 0 &&
+            recentMessages.map((m) => (
+              <div key={m.id} className="text-sm">
+                <span className="font-medium tabnums">
+                  {new Date(m.occurredAt).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                  :
+                </span>{" "}
+                <span className="text-text-secondary">
+                  {m.body.length > 60 ? `${m.body.slice(0, 60)}…` : m.body}
                 </span>
               </div>
             ))}

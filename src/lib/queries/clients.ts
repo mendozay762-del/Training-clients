@@ -3,6 +3,7 @@ import { db } from "@/db";
 import {
   clients,
   clientIntake,
+  clientMessages,
   bodyStats,
   workouts,
   sessions,
@@ -31,6 +32,13 @@ export async function listClients() {
           and ${sessions.status} = 'scheduled'
         order by ${sessions.startsAt} asc
         limit 1
+      )`,
+      openActionCount: sql<number>`(
+        select count(*)::int
+        from ${clientMessages}
+        where ${clientMessages.clientId} = ${clients.id}
+          and ${clientMessages.actionItem} is not null
+          and ${clientMessages.actionDone} = false
       )`,
     })
     .from(clients)
@@ -113,6 +121,26 @@ export async function getClientDetail(id: string) {
     .where(eq(clientIntake.clientId, id))
     .limit(1);
 
+  const recentMessages = await db
+    .select()
+    .from(clientMessages)
+    .where(eq(clientMessages.clientId, id))
+    .orderBy(desc(clientMessages.occurredAt))
+    .limit(2);
+
+  const [openActionRow] = await db
+    .select({
+      count: sql<number>`count(*)::int`,
+    })
+    .from(clientMessages)
+    .where(
+      and(
+        eq(clientMessages.clientId, id),
+        eq(clientMessages.actionDone, false),
+        sql`${clientMessages.actionItem} is not null`,
+      ),
+    );
+
   return {
     client,
     latestStats: statsRow ?? null,
@@ -121,11 +149,21 @@ export async function getClientDetail(id: string) {
     upcomingSessions,
     latestNutrition,
     recentWorkouts,
+    recentMessages,
+    openActionCount: openActionRow?.count ?? 0,
     waiver: {
       version: waiverRow?.waiverVersion ?? null,
       acceptedAt: waiverRow?.waiverAcceptedAt ?? null,
     },
   };
+}
+
+export async function listMessages(clientId: string) {
+  return db
+    .select()
+    .from(clientMessages)
+    .where(eq(clientMessages.clientId, clientId))
+    .orderBy(desc(clientMessages.occurredAt));
 }
 
 export async function listBodyStats(clientId: string) {

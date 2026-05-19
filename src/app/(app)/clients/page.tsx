@@ -113,6 +113,7 @@ export default async function ClientsPage() {
                 <ClientListCard
                   id={c.id}
                   name={c.name}
+                  openActionCount={c.openActionCount}
                   subtitle={clientSubtitle({
                     lastWorkoutOn: c.lastWorkoutOn,
                     nextSessionAt: c.nextSessionAt,
