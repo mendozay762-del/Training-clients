@@ -20,6 +20,7 @@ type PdfPageProxy = {
     canvas: HTMLCanvasElement;
     canvasContext?: CanvasRenderingContext2D;
     viewport: PdfViewport;
+    transform?: number[] | null;
   }): PdfRenderTask;
   getTextContent(): Promise<{ items: TextItem[]; styles: Record<string, unknown> }>;
   cleanup(): void;
@@ -225,6 +226,7 @@ function PdfPage({
   const [estimatedHeight, setEstimatedHeight] = useState(800);
   const [isInView, setIsInView] = useState(false);
   const [isRendered, setIsRendered] = useState(false);
+  const [pageError, setPageError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -269,38 +271,52 @@ function PdfPage({
 
     (async () => {
       try {
+        setPageError(null);
         const page = await doc.getPage(pageNumber);
         const baseViewport = page.getViewport({ scale: 1, rotation });
         const fitScale = (containerWidth - 24) / baseViewport.width;
         const finalScale = fitScale * userScale;
+        const viewport = page.getViewport({ scale: finalScale, rotation });
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
-        const viewport = page.getViewport({ scale: finalScale * dpr, rotation });
 
         const canvas = canvasRef.current;
         if (!canvas || cancelled) return;
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        canvas.style.width = `${viewport.width / dpr}px`;
-        canvas.style.height = `${viewport.height / dpr}px`;
+        canvas.width = Math.floor(viewport.width * dpr);
+        canvas.height = Math.floor(viewport.height * dpr);
+        canvas.style.width = `${Math.floor(viewport.width)}px`;
+        canvas.style.height = `${Math.floor(viewport.height)}px`;
 
-        renderTask = page.render({ canvas, viewport });
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          setPageError("canvas 2D context unavailable");
+          return;
+        }
+
+        const transform: number[] | null =
+          dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null;
+
+        renderTask = page.render({
+          canvas,
+          canvasContext: ctx,
+          viewport,
+          transform,
+        });
         await renderTask.promise;
 
         const textLayer = textLayerRef.current;
         if (!textLayer || cancelled) return;
         textLayer.innerHTML = "";
-        textLayer.style.width = `${viewport.width / dpr}px`;
-        textLayer.style.height = `${viewport.height / dpr}px`;
+        textLayer.style.width = `${Math.floor(viewport.width)}px`;
+        textLayer.style.height = `${Math.floor(viewport.height)}px`;
 
         const textContent = await page.getTextContent();
-        const textViewport = page.getViewport({ scale: finalScale, rotation });
         for (const item of textContent.items) {
           const span = document.createElement("span");
           span.textContent = item.str;
           const fontSize = Math.hypot(item.transform[0], item.transform[1]);
           const m = item.transform;
           const x = m[4];
-          const y = textViewport.height - m[5];
+          const y = viewport.height - m[5];
           span.style.position = "absolute";
           span.style.left = `${x}px`;
           span.style.top = `${y - fontSize}px`;
@@ -312,7 +328,9 @@ function PdfPage({
         if (!cancelled) setIsRendered(true);
       } catch (e) {
         if (e instanceof Error && e.name === "RenderingCancelledException") return;
-        console.warn("PDF page render failed", pageNumber, e);
+        const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+        console.error("PDF page render failed", pageNumber, e);
+        if (!cancelled) setPageError(msg);
       }
     })();
 
@@ -341,6 +359,21 @@ function PdfPage({
           pointerEvents: isRendered ? "auto" : "none",
         }}
       />
+      {pageError && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-accent-red/10 p-3 text-center">
+          <div className="text-xs font-medium text-accent-red">
+            Page {pageNumber} render failed
+          </div>
+          <div className="max-w-full break-words text-[10px] font-mono text-accent-red/80">
+            {pageError}
+          </div>
+        </div>
+      )}
+      {!isRendered && !pageError && isInView && (
+        <div className="absolute inset-0 flex items-center justify-center text-xs text-text-tertiary">
+          Rendering page {pageNumber}…
+        </div>
+      )}
     </div>
   );
 }
