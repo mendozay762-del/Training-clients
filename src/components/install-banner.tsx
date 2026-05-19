@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Share, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 
 const STORAGE_KEY = "install-banner-dismissed-v1";
 
@@ -23,6 +24,8 @@ function isStandalone(): boolean {
 export function InstallBanner() {
   const [visible, setVisible] = useState(false);
   const [showHow, setShowHow] = useState(false);
+
+  useBodyScrollLock(showHow);
 
   useEffect(() => {
     if (!isIos() || isStandalone()) return;
@@ -67,7 +70,7 @@ export function InstallBanner() {
 
       {showHow && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 p-4 safe-pb"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 p-4 safe-pb safe-px"
           onClick={() => setShowHow(false)}
         >
           <div

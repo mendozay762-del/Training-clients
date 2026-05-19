@@ -5,9 +5,12 @@ import { FileText, X } from "lucide-react";
 import { IntakeForm } from "./intake-form";
 import { QuestionnaireViewer } from "./questionnaire-viewer";
 import { createClientFromIntake } from "@/lib/actions/intake";
+import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 
 export function IntakeWithViewer() {
   const [overlayOpen, setOverlayOpen] = useState(false);
+
+  useBodyScrollLock(overlayOpen);
 
   return (
     <>
