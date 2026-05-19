@@ -287,6 +287,36 @@ export const clientIntake = pgTable("client_intake", {
   updatedAt,
 });
 
+export const clientMessages = pgTable(
+  "client_messages",
+  {
+    id,
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    occurredAt: timestamp("occurred_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    channel: text("channel").notNull(),
+    channelOther: text("channel_other"),
+    body: text("body").notNull(),
+    actionItem: text("action_item"),
+    actionDone: boolean("action_done").notNull().default(false),
+    createdAt,
+    updatedAt,
+  },
+  (t) => ({
+    clientOccurredIdx: index("client_messages_client_occurred_idx").on(
+      t.clientId,
+      t.occurredAt,
+    ),
+    clientActionOpenIdx: index("client_messages_client_action_open_idx").on(
+      t.clientId,
+      t.actionDone,
+    ),
+  }),
+);
+
 export type Client = typeof clients.$inferSelect;
 export type NewClient = typeof clients.$inferInsert;
 export type ClientIntake = typeof clientIntake.$inferSelect;
@@ -298,3 +328,5 @@ export type BodyStat = typeof bodyStats.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
 export type Goal = typeof goals.$inferSelect;
 export type NutritionNote = typeof nutritionNotes.$inferSelect;
+export type ClientMessage = typeof clientMessages.$inferSelect;
+export type NewClientMessage = typeof clientMessages.$inferInsert;
