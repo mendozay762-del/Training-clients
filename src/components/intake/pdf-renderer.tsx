@@ -68,11 +68,8 @@ export function PdfRenderer({
     (async () => {
       try {
         const pdfjs = await import("pdfjs-dist");
-        const workerUrl = (
-          await import("pdfjs-dist/build/pdf.worker.min.mjs?url")
-        ).default;
         (pdfjs as unknown as { GlobalWorkerOptions: { workerSrc: string } })
-          .GlobalWorkerOptions.workerSrc = workerUrl;
+          .GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
         const buf = await file.arrayBuffer();
         task = (pdfjs as unknown as {
