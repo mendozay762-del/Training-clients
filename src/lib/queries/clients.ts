@@ -270,6 +270,134 @@ export async function getNextSessionAcrossClients() {
   return rows[0] ?? null;
 }
 
+export type ClientPr = {
+  exerciseName: string;
+  weightLbs: number;
+  reps: number;
+  e1rm: number;
+  performedOn: string;
+};
+
+export async function listClientPRs(clientId: string): Promise<ClientPr[]> {
+  const rows = await db.execute<{
+    exercise_name: string;
+    weight_lbs: string;
+    reps: number;
+    e1rm: string;
+    performed_on: string;
+  }>(sql`
+    select distinct on (lower(${workoutExercises.exerciseName}))
+      ${workoutExercises.exerciseName} as exercise_name,
+      ${workoutSets.weightLbs} as weight_lbs,
+      ${workoutSets.reps} as reps,
+      (${workoutSets.weightLbs} * (1 + ${workoutSets.reps}::numeric / 30)) as e1rm,
+      ${workouts.performedOn} as performed_on
+    from ${workoutSets}
+    inner join ${workoutExercises} on ${workoutSets.exerciseId} = ${workoutExercises.id}
+    inner join ${workouts} on ${workoutExercises.workoutId} = ${workouts.id}
+    where ${workouts.clientId} = ${clientId}
+      and ${workoutSets.isWarmup} = false
+      and ${workoutSets.weightLbs} is not null
+      and ${workoutSets.reps} > 0
+    order by
+      lower(${workoutExercises.exerciseName}),
+      (${workoutSets.weightLbs} * (1 + ${workoutSets.reps}::numeric / 30)) desc,
+      ${workouts.performedOn} desc
+  `);
+
+  return rows.rows.map((r) => ({
+    exerciseName: r.exercise_name,
+    weightLbs: Number(r.weight_lbs),
+    reps: r.reps,
+    e1rm: Number(r.e1rm),
+    performedOn: r.performed_on,
+  }));
+}
+
+export type E1rmPoint = {
+  exerciseName: string;
+  performedOn: string;
+  e1rm: number;
+};
+
+export async function listE1rmSeries(
+  clientId: string,
+  options: { days?: number; minSessions?: number; topN?: number } = {},
+): Promise<E1rmPoint[]> {
+  const { days = 180, minSessions = 3, topN = 4 } = options;
+
+  const rows = await db.execute<{
+    exercise_name: string;
+    performed_on: string;
+    best_e1rm: string;
+    session_count: number;
+  }>(sql`
+    with per_session as (
+      select
+        ${workoutExercises.exerciseName} as exercise_name,
+        lower(${workoutExercises.exerciseName}) as exercise_key,
+        ${workouts.performedOn} as performed_on,
+        max(${workoutSets.weightLbs} * (1 + ${workoutSets.reps}::numeric / 30)) as best_e1rm
+      from ${workoutSets}
+      inner join ${workoutExercises} on ${workoutSets.exerciseId} = ${workoutExercises.id}
+      inner join ${workouts} on ${workoutExercises.workoutId} = ${workouts.id}
+      where ${workouts.clientId} = ${clientId}
+        and ${workoutSets.isWarmup} = false
+        and ${workoutSets.weightLbs} is not null
+        and ${workoutSets.reps} > 0
+        and ${workouts.performedOn} >= (current_date - (${days} || ' days')::interval)
+      group by ${workoutExercises.exerciseName}, exercise_key, ${workouts.performedOn}
+    ),
+    exercise_freq as (
+      select exercise_key, count(*) as session_count
+      from per_session
+      group by exercise_key
+      having count(*) >= ${minSessions}
+      order by count(*) desc, max(best_e1rm) desc
+      limit ${topN}
+    )
+    select ps.exercise_name, ps.performed_on, ps.best_e1rm, ef.session_count
+    from per_session ps
+    inner join exercise_freq ef on ef.exercise_key = lower(ps.exercise_name)
+    order by ps.performed_on asc, ps.exercise_name
+  `);
+
+  return rows.rows.map((r) => ({
+    exerciseName: r.exercise_name,
+    performedOn: r.performed_on,
+    e1rm: Number(r.best_e1rm),
+  }));
+}
+
+export async function listWorkoutsPerWeek(
+  clientId: string,
+  weeks = 12,
+): Promise<{ weekStart: string; count: number }[]> {
+  const rows = await db.execute<{ week_start: string; count: number }>(sql`
+    select
+      gs::date as week_start,
+      coalesce(c.cnt, 0)::int as count
+    from generate_series(
+      date_trunc('week', current_date) - ((${weeks} - 1) || ' weeks')::interval,
+      date_trunc('week', current_date),
+      interval '1 week'
+    ) as gs
+    left join (
+      select date_trunc('week', ${workouts.performedOn}::timestamp)::date as week_start,
+             count(*) as cnt
+      from ${workouts}
+      where ${workouts.clientId} = ${clientId}
+      group by week_start
+    ) c on c.week_start = gs::date
+    order by gs
+  `);
+
+  return rows.rows.map((r) => ({
+    weekStart: r.week_start,
+    count: Number(r.count),
+  }));
+}
+
 export async function getWeekSummary() {
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
