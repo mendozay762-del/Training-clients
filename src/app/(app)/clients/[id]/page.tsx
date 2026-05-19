@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ClipboardList, Pencil } from "lucide-react";
+import { ClipboardList, Pencil, TrendingUp } from "lucide-react";
 import { PageHeader } from "@/components/nav/page-header";
 import { HeroCard } from "@/components/clients/hero-card";
 import { SectionBlock } from "@/components/clients/section-block";
@@ -81,6 +81,14 @@ export default async function ClientDetailPage({
         back="/clients"
         actions={
           <>
+            <Link
+              href={`/clients/${id}/progress`}
+              aria-label="View progress dashboards"
+              title="Progress"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-card border border-border-subtle/60 hover:bg-card-hover"
+            >
+              <TrendingUp className="h-4 w-4" />
+            </Link>
             <Link
               href={`/clients/${id}/intake/edit`}
               aria-label="Edit intake questionnaire"
