@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   FileText,
   Image as ImageIcon,
@@ -12,7 +13,18 @@ import {
   Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { PdfRenderer } from "./pdf-renderer";
+
+const PdfRenderer = dynamic(
+  () => import("./pdf-renderer").then((m) => m.PdfRenderer),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full items-center justify-center text-sm text-text-tertiary">
+        Loading viewer…
+      </div>
+    ),
+  },
+);
 
 type FileKind = "pdf" | "image" | "docx" | "unsupported";
 

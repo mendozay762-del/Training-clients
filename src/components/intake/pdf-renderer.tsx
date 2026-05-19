@@ -6,39 +6,12 @@ import {
   useRef,
   useState,
 } from "react";
+import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/Page/TextLayer.css";
+import "react-pdf/dist/Page/AnnotationLayer.css";
 import { cn } from "@/lib/utils";
 
-type PdfDoc = {
-  numPages: number;
-  getPage(n: number): Promise<PdfPageProxy>;
-  destroy(): Promise<void>;
-};
-type PdfRenderTask = { promise: Promise<void>; cancel(): void };
-type PdfPageProxy = {
-  getViewport(opts: { scale: number; rotation?: number }): PdfViewport;
-  render(opts: {
-    canvas: HTMLCanvasElement;
-    canvasContext?: CanvasRenderingContext2D;
-    viewport: PdfViewport;
-    transform?: number[] | null;
-  }): PdfRenderTask;
-  getTextContent(): Promise<{ items: TextItem[]; styles: Record<string, unknown> }>;
-  cleanup(): void;
-};
-type PdfViewport = {
-  width: number;
-  height: number;
-  scale: number;
-  rotation: number;
-};
-type TextItem = {
-  str: string;
-  transform: number[];
-  width: number;
-  height: number;
-  dir: string;
-  fontName: string;
-};
+pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 interface PdfRendererProps {
   file: File;
@@ -58,53 +31,10 @@ export function PdfRenderer({
   onError,
   onPageChange,
 }: PdfRendererProps) {
-  const [doc, setDoc] = useState<PdfDoc | null>(null);
-  const [numPages, setNumPages] = useState(0);
-  const [scale, setScale] = useState(1);
-  const [containerWidth, setContainerWidth] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    let task: { promise: Promise<PdfDoc>; destroy?: () => void } | null = null;
-    (async () => {
-      try {
-        const pdfjs = await import("pdfjs-dist");
-        (pdfjs as unknown as { GlobalWorkerOptions: { workerSrc: string } })
-          .GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
-
-        const buf = await file.arrayBuffer();
-        task = (pdfjs as unknown as {
-          getDocument: (o: {
-            data: ArrayBuffer;
-            disableWorker?: boolean;
-            isEvalSupported?: boolean;
-          }) => {
-            promise: Promise<PdfDoc>;
-            destroy: () => void;
-          };
-        }).getDocument({ data: buf, disableWorker: true });
-
-        const pdfDoc = await task!.promise;
-        if (cancelled) return;
-        setDoc(pdfDoc);
-        setNumPages(pdfDoc.numPages);
-        onPageChange(1, pdfDoc.numPages);
-      } catch (e) {
-        if (!cancelled) {
-          onError(e instanceof Error ? e.message : "Could not render PDF");
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-      task?.destroy?.();
-    };
-  }, [file, onError, onPageChange]);
-
-  useEffect(() => {
-    if (!zoomEnabled) setScale(1);
-  }, [zoomEnabled]);
+  const [numPages, setNumPages] = useState(0);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [scale, setScale] = useState(1);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -117,6 +47,10 @@ export function PdfRenderer({
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (!zoomEnabled) setScale(1);
+  }, [zoomEnabled]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -169,18 +103,22 @@ export function PdfRenderer({
     };
   }, [zoomEnabled, scale]);
 
-  const handlePageVisible = useCallback(
-    (n: number) => onPageChange(n, numPages),
-    [onPageChange, numPages],
+  const handleLoadSuccess = useCallback(
+    ({ numPages: n }: { numPages: number }) => {
+      setNumPages(n);
+      onPageChange(1, n);
+    },
+    [onPageChange],
   );
 
-  if (!doc) {
-    return (
-      <div className="flex h-full items-center justify-center text-sm text-text-tertiary">
-        Loading PDF…
-      </div>
-    );
-  }
+  const handleLoadError = useCallback(
+    (err: Error) => {
+      onError(`${err.name}: ${err.message}`);
+    },
+    [onError],
+  );
+
+  const pageWidth = containerWidth > 24 ? containerWidth - 24 : 0;
 
   return (
     <div
@@ -190,65 +128,56 @@ export function PdfRenderer({
         touchAction: zoomEnabled ? "pan-y pinch-zoom" : "pan-y",
       }}
     >
-      <div className="flex flex-col gap-3 p-3">
-        {Array.from({ length: numPages }).map((_, i) => (
-          <PdfPage
-            key={i}
-            doc={doc}
-            pageNumber={i + 1}
-            rotation={rotation}
-            userScale={scale}
-            containerWidth={containerWidth}
-            onVisible={handlePageVisible}
-          />
-        ))}
-      </div>
+      <Document
+        file={file}
+        onLoadSuccess={handleLoadSuccess}
+        onLoadError={handleLoadError}
+        loading={
+          <div className="flex h-full items-center justify-center p-6 text-sm text-text-tertiary">
+            Loading PDF…
+          </div>
+        }
+        error={
+          <div className="flex h-full items-center justify-center p-6 text-sm text-accent-red">
+            Failed to load PDF.
+          </div>
+        }
+      >
+        {pageWidth > 0 && (
+          <div className="flex flex-col gap-3 p-3">
+            {Array.from({ length: numPages }).map((_, i) => (
+              <PageWithObserver
+                key={`${i}-${rotation}`}
+                pageNumber={i + 1}
+                width={pageWidth}
+                rotate={rotation}
+                scale={scale}
+                onVisible={(n) => onPageChange(n, numPages)}
+              />
+            ))}
+          </div>
+        )}
+      </Document>
     </div>
   );
 }
 
-interface PdfPageProps {
-  doc: PdfDoc;
+interface PageWithObserverProps {
   pageNumber: number;
-  rotation: number;
-  userScale: number;
-  containerWidth: number;
+  width: number;
+  rotate: number;
+  scale: number;
   onVisible: (pageNumber: number) => void;
 }
 
-function PdfPage({
-  doc,
+function PageWithObserver({
   pageNumber,
-  rotation,
-  userScale,
-  containerWidth,
+  width,
+  rotate,
+  scale,
   onVisible,
-}: PdfPageProps) {
+}: PageWithObserverProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const textLayerRef = useRef<HTMLDivElement>(null);
-  const [estimatedHeight, setEstimatedHeight] = useState(800);
-  const [isInView, setIsInView] = useState(false);
-  const [isRendered, setIsRendered] = useState(false);
-  const [pageError, setPageError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const page = await doc.getPage(pageNumber);
-      const baseViewport = page.getViewport({ scale: 1, rotation });
-      if (cancelled) return;
-      const fitScale = containerWidth > 0
-        ? (containerWidth - 24) / baseViewport.width
-        : 1;
-      const finalScale = fitScale * userScale;
-      const viewport = page.getViewport({ scale: finalScale, rotation });
-      if (!cancelled) setEstimatedHeight(viewport.height);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [doc, pageNumber, rotation, userScale, containerWidth]);
 
   useEffect(() => {
     const el = wrapperRef.current;
@@ -256,133 +185,37 @@ function PdfPage({
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
-          if (e.isIntersecting) {
-            setIsInView(true);
-            onVisible(pageNumber);
-          }
+          if (e.isIntersecting) onVisible(pageNumber);
         }
       },
-      { root: el.closest(".overflow-auto"), rootMargin: "200px 0px" },
+      { root: el.closest(".overflow-auto"), rootMargin: "-25% 0px -50% 0px" },
     );
     io.observe(el);
     return () => io.disconnect();
   }, [pageNumber, onVisible]);
 
-  useEffect(() => {
-    if (!isInView || containerWidth === 0) return;
-    let cancelled = false;
-    let renderTask: PdfRenderTask | null = null;
-
-    (async () => {
-      try {
-        setPageError(null);
-        const page = await doc.getPage(pageNumber);
-        const baseViewport = page.getViewport({ scale: 1, rotation });
-        const fitScale = (containerWidth - 24) / baseViewport.width;
-        const finalScale = fitScale * userScale;
-        const viewport = page.getViewport({ scale: finalScale, rotation });
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
-
-        const canvas = canvasRef.current;
-        if (!canvas || cancelled) return;
-        canvas.width = Math.floor(viewport.width * dpr);
-        canvas.height = Math.floor(viewport.height * dpr);
-        canvas.style.width = `${Math.floor(viewport.width)}px`;
-        canvas.style.height = `${Math.floor(viewport.height)}px`;
-
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          setPageError("canvas 2D context unavailable");
-          return;
-        }
-
-        const transform: number[] | null =
-          dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null;
-
-        renderTask = page.render({
-          canvas,
-          canvasContext: ctx,
-          viewport,
-          transform,
-        });
-        await Promise.race([
-          renderTask.promise,
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error("Render timed out after 15s")), 15000),
-          ),
-        ]);
-
-        const textLayer = textLayerRef.current;
-        if (!textLayer || cancelled) return;
-        textLayer.innerHTML = "";
-        textLayer.style.width = `${Math.floor(viewport.width)}px`;
-        textLayer.style.height = `${Math.floor(viewport.height)}px`;
-
-        const textContent = await page.getTextContent();
-        for (const item of textContent.items) {
-          const span = document.createElement("span");
-          span.textContent = item.str;
-          const fontSize = Math.hypot(item.transform[0], item.transform[1]);
-          const m = item.transform;
-          const x = m[4];
-          const y = viewport.height - m[5];
-          span.style.position = "absolute";
-          span.style.left = `${x}px`;
-          span.style.top = `${y - fontSize}px`;
-          span.style.fontSize = `${fontSize}px`;
-          span.style.transformOrigin = "0% 0%";
-          span.style.whiteSpace = "pre";
-          textLayer.appendChild(span);
-        }
-        if (!cancelled) setIsRendered(true);
-      } catch (e) {
-        if (e instanceof Error && e.name === "RenderingCancelledException") return;
-        const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
-        console.error("PDF page render failed", pageNumber, e);
-        if (!cancelled) setPageError(msg);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      renderTask?.cancel();
-    };
-  }, [isInView, doc, pageNumber, rotation, userScale, containerWidth]);
-
   return (
     <div
       ref={wrapperRef}
-      data-page-number={pageNumber}
+      data-page={pageNumber}
       className={cn(
         "relative mx-auto bg-white shadow-sm",
-        pageNumber > 1 && "mt-1 border-t border-border-subtle/30",
+        pageNumber > 1 && "border-t border-border-subtle/30",
       )}
-      style={{ minHeight: estimatedHeight }}
     >
-      <canvas ref={canvasRef} className="block" />
-      <div
-        ref={textLayerRef}
-        className="pdf-text-layer absolute inset-0 select-text text-transparent"
-        style={{
-          opacity: isRendered ? 1 : 0,
-          pointerEvents: isRendered ? "auto" : "none",
-        }}
+      <Page
+        pageNumber={pageNumber}
+        width={width}
+        rotate={rotate}
+        scale={scale}
+        renderTextLayer
+        renderAnnotationLayer={false}
+        loading={
+          <div className="flex aspect-[8.5/11] items-center justify-center text-xs text-text-tertiary">
+            Rendering page {pageNumber}…
+          </div>
+        }
       />
-      {pageError && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-accent-red/10 p-3 text-center">
-          <div className="text-xs font-medium text-accent-red">
-            Page {pageNumber} render failed
-          </div>
-          <div className="max-w-full break-words text-[10px] font-mono text-accent-red/80">
-            {pageError}
-          </div>
-        </div>
-      )}
-      {!isRendered && !pageError && isInView && (
-        <div className="absolute inset-0 flex items-center justify-center text-xs text-text-tertiary">
-          Rendering page {pageNumber}…
-        </div>
-      )}
     </div>
   );
 }
