@@ -4,6 +4,7 @@ import { Controller, useFormContext } from "react-hook-form";
 import { IntakeSectionCard } from "../intake-section-card";
 import { TextField } from "../fields/text-field";
 import { SingleSelectField } from "../fields/single-select-field";
+import { MultiSelectField } from "../fields/multi-select-field";
 import { ConditionalReveal } from "../fields/conditional-reveal";
 import {
   COACHING_TYPES,
@@ -90,13 +91,14 @@ export function Section2Logistics() {
           control={control}
           name="gymAccess"
           render={({ field }) => (
-            <SingleSelectField
+            <MultiSelectField
               number={15}
               label="What gym do you have access to?"
+              hint="Check all that apply"
               options={gymAccessOptions}
-              value={field.value ?? null}
+              value={field.value ?? []}
               onChange={(v) =>
-                field.onChange(v as (typeof GYM_ACCESS)[number])
+                field.onChange(v as (typeof GYM_ACCESS)[number][])
               }
             />
           )}
@@ -114,12 +116,13 @@ export function Section2Logistics() {
         control={control}
         name="daysPerWeek"
         render={({ field }) => (
-          <SingleSelectField
+          <MultiSelectField
             number={17}
             label="How many days per week can you realistically train?"
+            hint="Check all that apply (e.g., 4 and 5 if it varies week to week)"
             options={daysOptions}
-            value={field.value != null ? String(field.value) : null}
-            onChange={(v) => field.onChange(parseInt(v, 10))}
+            value={(field.value ?? []).map(String)}
+            onChange={(v) => field.onChange(v.map((s) => parseInt(s, 10)))}
           />
         )}
       />
@@ -127,12 +130,13 @@ export function Section2Logistics() {
         control={control}
         name="sessionLengthMin"
         render={({ field }) => (
-          <SingleSelectField
+          <MultiSelectField
             number={18}
             label="Preferred session length"
+            hint="Check all that apply"
             options={sessionLengthOptions}
-            value={field.value != null ? String(field.value) : null}
-            onChange={(v) => field.onChange(parseInt(v, 10))}
+            value={(field.value ?? []).map(String)}
+            onChange={(v) => field.onChange(v.map((s) => parseInt(s, 10)))}
           />
         )}
       />
@@ -156,13 +160,14 @@ export function Section2Logistics() {
         control={control}
         name="commPreference"
         render={({ field }) => (
-          <SingleSelectField
+          <MultiSelectField
             number={22}
             label="Best way to reach you for coaching communication"
+            hint="Check all that apply"
             options={commOptions}
-            value={field.value ?? null}
+            value={field.value ?? []}
             onChange={(v) =>
-              field.onChange(v as (typeof COMM_PREFS)[number])
+              field.onChange(v as (typeof COMM_PREFS)[number][])
             }
             otherKey="other"
             otherValue={watch("commPreferenceOther") ?? ""}

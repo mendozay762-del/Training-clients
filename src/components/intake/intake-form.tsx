@@ -42,6 +42,13 @@ export function IntakeForm({
     resolver: zodResolver(intakeFormSchema),
     defaultValues: {
       measureProgress: [],
+      gymAccess: [],
+      daysPerWeek: [],
+      sessionLengthMin: [],
+      commPreference: [],
+      splitPreference: [],
+      workActivity: [],
+      dietaryPattern: [],
       sharesMeasurements: false,
       acknowledgedDate: todayIso(),
       ...defaultValues,

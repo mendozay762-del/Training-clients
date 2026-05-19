@@ -4,7 +4,7 @@ import { Controller, useFormContext } from "react-hook-form";
 import { IntakeSectionCard } from "../intake-section-card";
 import { TextField } from "../fields/text-field";
 import { ScaleField } from "../fields/scale-field";
-import { SingleSelectField } from "../fields/single-select-field";
+import { MultiSelectField } from "../fields/multi-select-field";
 import type { IntakeFormData } from "@/lib/schemas/client-intake";
 
 const workActivityOptions = [
@@ -57,11 +57,12 @@ export function Section7Lifestyle() {
         control={control}
         name="workActivity"
         render={({ field }) => (
-          <SingleSelectField
+          <MultiSelectField
             number={61}
             label="How would you describe your work activity level?"
+            hint="Check all that apply (e.g., both desk and on-feet for hybrid roles)"
             options={workActivityOptions}
-            value={field.value ?? null}
+            value={field.value ?? []}
             onChange={field.onChange}
           />
         )}

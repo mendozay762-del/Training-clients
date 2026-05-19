@@ -3,7 +3,7 @@
 import { Controller, useFormContext } from "react-hook-form";
 import { IntakeSectionCard } from "../intake-section-card";
 import { TextField } from "../fields/text-field";
-import { SingleSelectField } from "../fields/single-select-field";
+import { MultiSelectField } from "../fields/multi-select-field";
 import type { IntakeFormData } from "@/lib/schemas/client-intake";
 
 const dietaryOptions = [
@@ -23,11 +23,12 @@ export function Section8Nutrition() {
         control={control}
         name="dietaryPattern"
         render={({ field }) => (
-          <SingleSelectField
+          <MultiSelectField
             number={64}
             label="What's your dietary pattern?"
+            hint="Check all that apply"
             options={dietaryOptions}
-            value={field.value ?? null}
+            value={field.value ?? []}
             onChange={field.onChange}
             otherKey="other"
             otherValue={watch("dietaryPatternOther") ?? ""}

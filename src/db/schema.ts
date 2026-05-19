@@ -35,7 +35,7 @@ export const clients = pgTable("clients", {
   startDate: date("start_date"),
   targetStartDate: date("target_start_date"),
   budgetRange: text("budget_range"),
-  commPreference: text("comm_preference"),
+  commPreference: text("comm_preference").array(),
   commPreferenceOther: text("comm_preference_other"),
   commPreferenceHandle: text("comm_preference_handle"),
   goalsSummary: text("goals_summary"),
@@ -204,10 +204,10 @@ export const clientIntake = pgTable("client_intake", {
 
   preferredGymLocation: text("preferred_gym_location"),
   maxTravelDistance: text("max_travel_distance"),
-  gymAccess: text("gym_access"),
+  gymAccess: text("gym_access").array(),
   equipmentAvailable: text("equipment_available"),
-  daysPerWeek: integer("days_per_week"),
-  sessionLengthMin: integer("session_length_min"),
+  daysPerWeek: integer("days_per_week").array(),
+  sessionLengthMin: integer("session_length_min").array(),
   preferredTimeOfDay: text("preferred_time_of_day"),
 
   primaryGoal: text("primary_goal"),
@@ -239,7 +239,7 @@ export const clientIntake = pgTable("client_intake", {
 
   nonNegotiableMovements: text("non_negotiable_movements"),
   preLiftRoutine: text("pre_lift_routine"),
-  splitPreference: text("split_preference"),
+  splitPreference: text("split_preference").array(),
   proximityToFailure: text("proximity_to_failure"),
 
   parqHeartCondition: boolean("parq_heart_condition"),
@@ -259,11 +259,11 @@ export const clientIntake = pgTable("client_intake", {
   sleepHours: numeric("sleep_hours", { precision: 3, scale: 1 }),
   sleepQuality: integer("sleep_quality"),
   stressLevel: integer("stress_level"),
-  workActivity: text("work_activity"),
+  workActivity: text("work_activity").array(),
   workSchedule: text("work_schedule"),
   outsideCommitments: text("outside_commitments"),
 
-  dietaryPattern: text("dietary_pattern"),
+  dietaryPattern: text("dietary_pattern").array(),
   dietaryPatternOther: text("dietary_pattern_other"),
   foodAllergies: text("food_allergies"),
   dietaryRestrictions: text("dietary_restrictions"),

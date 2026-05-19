@@ -15,6 +15,13 @@
       "when": 1779033361448,
       "tag": "0001_curious_mojo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779207601847,
+      "tag": "0002_broad_excalibur",
+      "breakpoints": true
     }
   ]
 }

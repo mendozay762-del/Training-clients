@@ -4,6 +4,7 @@ import { Controller, useFormContext } from "react-hook-form";
 import { IntakeSectionCard } from "../intake-section-card";
 import { TextField } from "../fields/text-field";
 import { SingleSelectField } from "../fields/single-select-field";
+import { MultiSelectField } from "../fields/multi-select-field";
 import {
   requiresExperience,
   type IntakeFormData,
@@ -59,11 +60,12 @@ export function Section5Preferences() {
         control={control}
         name="splitPreference"
         render={({ field }) => (
-          <SingleSelectField
+          <MultiSelectField
             number={43}
             label="Training split preference"
+            hint="Check all that apply"
             options={splitOptions}
-            value={field.value ?? null}
+            value={field.value ?? []}
             onChange={field.onChange}
           />
         )}
