@@ -54,7 +54,7 @@ export function SectionAcknowledgment() {
                   type="button"
                   onClick={() => field.onChange(!checked)}
                   className={cn(
-                    "flex items-start gap-3 rounded-button px-3 py-3 border text-left text-sm transition-colors",
+                    "flex items-start gap-3 rounded-btn px-3 py-3 border text-left text-sm transition-colors",
                     checked
                       ? "bg-card-hover border-accent-blue/60 text-text-primary"
                       : "bg-card/60 border-border-subtle/40 text-text-secondary",

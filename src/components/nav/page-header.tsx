@@ -21,7 +21,7 @@ export function PageHeader({ title, back, actions, className }: PageHeaderProps)
         {back && (
           <Link
             href={back}
-            className="-ml-2 flex h-11 w-11 items-center justify-center rounded-full text-text-secondary hover:text-text-primary hover:bg-card-hover"
+            className="-ml-2 flex h-11 w-11 items-center justify-center rounded-full bg-card-hover/40 text-text-secondary hover:text-text-primary hover:bg-card-hover"
             aria-label="Back"
           >
             <ChevronLeft className="h-6 w-6" />

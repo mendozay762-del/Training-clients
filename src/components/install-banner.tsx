@@ -59,7 +59,7 @@ export function InstallBanner() {
           type="button"
           onClick={dismiss}
           aria-label="Dismiss"
-          className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary hover:bg-card-hover hover:text-text-primary"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-card-hover/40 text-text-secondary hover:bg-card-hover hover:text-text-primary"
         >
           <X className="h-4 w-4" />
         </button>

@@ -36,7 +36,7 @@ export function YesNoField({
           type="button"
           onClick={() => onChange(false)}
           className={cn(
-            "flex-1 h-12 rounded-button border text-base font-medium transition-colors",
+            "flex-1 h-12 rounded-btn border text-base font-medium transition-colors",
             value === false
               ? "bg-card-hover border-accent-blue/60 text-text-primary"
               : "bg-card/60 border-border-subtle/40 text-text-secondary hover:text-text-primary",
@@ -48,7 +48,7 @@ export function YesNoField({
           type="button"
           onClick={() => onChange(true)}
           className={cn(
-            "flex-1 h-12 rounded-button border text-base font-medium transition-colors",
+            "flex-1 h-12 rounded-btn border text-base font-medium transition-colors",
             value === true
               ? "bg-card-hover border-accent-blue/60 text-text-primary"
               : "bg-card/60 border-border-subtle/40 text-text-secondary hover:text-text-primary",

@@ -43,7 +43,7 @@ export function ScaleField({
             key={n}
             onClick={() => onChange(n)}
             className={cn(
-              "h-11 flex-1 rounded-button border text-sm font-semibold tabnums transition-colors",
+              "h-11 flex-1 rounded-btn border text-sm font-semibold tabnums transition-colors",
               value === n
                 ? "bg-accent-blue border-accent-blue text-white"
                 : "bg-card/60 border-border-subtle/40 text-text-secondary hover:text-text-primary",

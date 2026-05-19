@@ -56,7 +56,7 @@ export function MultiSelectField({
               key={opt.value}
               onClick={() => toggle(opt.value)}
               className={cn(
-                "flex items-center gap-3 h-11 rounded-button px-3 border text-sm font-medium text-left transition-colors",
+                "flex items-center gap-3 h-11 rounded-btn px-3 border text-sm font-medium text-left transition-colors",
                 checked
                   ? "bg-card-hover border-accent-blue/60 text-text-primary"
                   : "bg-card/60 border-border-subtle/40 text-text-secondary hover:text-text-primary",
@@ -83,7 +83,7 @@ export function MultiSelectField({
           value={otherValue ?? ""}
           onChange={(e) => onOtherChange(e.target.value)}
           placeholder={otherPlaceholder}
-          className="mt-1 w-full rounded-button bg-card-hover/60 border border-border-subtle/40 px-3 py-2.5 text-base text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent-blue/60"
+          className="mt-1 w-full rounded-btn bg-card-hover/60 border border-border-subtle/40 px-3 py-2.5 text-base text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent-blue/60"
         />
       )}
       {error && <p className="text-xs text-accent-red">{error}</p>}

@@ -22,7 +22,7 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
   ) {
     const fieldId = id ?? rest.name;
     const inputClass = cn(
-      "w-full rounded-button bg-card-hover/60 border border-border-subtle/40 px-3 py-2.5 text-base text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent-blue/60 transition-colors",
+      "w-full rounded-btn bg-card-hover/60 border border-border-subtle/40 px-3 py-2.5 text-base text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent-blue/60 transition-colors",
       error && "border-accent-red/60",
       className,
     );

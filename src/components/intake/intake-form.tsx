@@ -123,7 +123,7 @@ export function IntakeForm({
             <button
               type="submit"
               disabled={isPending}
-              className="flex-1 h-12 rounded-button bg-accent-blue text-base font-semibold text-white transition-colors hover:bg-accent-blue/90 disabled:opacity-50"
+              className="flex-1 h-12 rounded-btn bg-accent-blue text-base font-semibold text-white transition-colors hover:bg-accent-blue/90 disabled:opacity-50"
             >
               {isPending ? "Saving…" : submitLabel}
             </button>

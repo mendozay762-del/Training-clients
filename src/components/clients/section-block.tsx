@@ -35,7 +35,7 @@ export function SectionBlock({
           {addHref && (
             <Link
               href={addHref}
-              className="flex h-9 w-9 items-center justify-center rounded-full text-text-secondary hover:bg-card-hover hover:text-text-primary"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-card-hover/40 text-text-secondary hover:bg-card-hover hover:text-text-primary"
               aria-label={`Add ${label.toLowerCase()}`}
             >
               <Plus className="h-4 w-4" />
@@ -44,7 +44,7 @@ export function SectionBlock({
           {viewHref && (
             <Link
               href={viewHref}
-              className="flex h-9 w-9 items-center justify-center rounded-full text-text-secondary hover:bg-card-hover hover:text-text-primary"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-card-hover/40 text-text-secondary hover:bg-card-hover hover:text-text-primary"
               aria-label={`View all ${label.toLowerCase()}`}
             >
               <ChevronRight className="h-4 w-4" />

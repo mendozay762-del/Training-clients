@@ -198,7 +198,7 @@ export function QuestionnaireViewer({
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="rounded-button bg-card-hover px-4 py-2 text-sm font-medium hover:bg-card"
+          className="rounded-btn bg-card-hover px-4 py-2 text-sm font-medium hover:bg-card"
         >
           Choose file
         </button>
@@ -242,20 +242,20 @@ export function QuestionnaireViewer({
                 aria-label={zoomEnabled ? "Disable zoom" : "Enable zoom"}
                 title={zoomEnabled ? "Zoom enabled — tap to disable" : "Tap to enable pinch-zoom"}
                 className={cn(
-                  "flex h-8 items-center gap-1 rounded-button px-2 text-xs font-medium",
+                  "flex h-11 min-w-11 items-center gap-1.5 rounded-btn px-3 text-sm font-medium",
                   zoomEnabled
                     ? "bg-accent-blue text-white"
-                    : "text-text-secondary hover:bg-card-hover",
+                    : "bg-card-hover/40 text-text-secondary hover:bg-card-hover",
                 )}
               >
-                <ZoomIn className="h-3.5 w-3.5" />
+                <ZoomIn className="h-4 w-4" />
                 {zoomEnabled ? "On" : "Zoom"}
               </button>
               <button
                 type="button"
                 onClick={() => setRotation((r) => (r + 90) % 360)}
                 aria-label="Rotate 90 degrees"
-                className="flex h-8 w-8 items-center justify-center rounded-button hover:bg-card-hover"
+                className="flex h-11 w-11 items-center justify-center rounded-btn bg-card-hover/40 hover:bg-card-hover"
               >
                 <RotateCw className="h-4 w-4" />
               </button>
@@ -265,7 +265,7 @@ export function QuestionnaireViewer({
             type="button"
             onClick={clear}
             aria-label="Remove file"
-            className="flex h-8 w-8 items-center justify-center rounded-button hover:bg-card-hover"
+            className="flex h-11 w-11 items-center justify-center rounded-btn bg-card-hover/40 hover:bg-card-hover"
           >
             <X className="h-4 w-4" />
           </button>
@@ -284,7 +284,7 @@ export function QuestionnaireViewer({
             <button
               type="button"
               onClick={clear}
-              className="flex items-center gap-2 rounded-button bg-accent-red px-4 py-2 text-sm font-semibold text-white hover:bg-accent-red/90"
+              className="flex items-center gap-2 rounded-btn bg-accent-red px-4 py-2 text-sm font-semibold text-white hover:bg-accent-red/90"
             >
               <Trash2 className="h-4 w-4" />
               Remove file

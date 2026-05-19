@@ -22,7 +22,7 @@ export default function AppError({
       )}
       <button
         onClick={reset}
-        className="mt-2 rounded-button bg-card px-4 py-2 text-sm font-medium hover:bg-card-hover"
+        className="mt-2 rounded-btn bg-card px-4 py-2 text-sm font-medium hover:bg-card-hover"
       >
         Try again
       </button>
