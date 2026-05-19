@@ -4,6 +4,7 @@ import { ClipboardList, Pencil } from "lucide-react";
 import { PageHeader } from "@/components/nav/page-header";
 import { HeroCard } from "@/components/clients/hero-card";
 import { SectionBlock } from "@/components/clients/section-block";
+import { WaiverBadge } from "@/components/clients/waiver-badge";
 import { getClientDetail } from "@/lib/queries/clients";
 import { relativeDays } from "@/lib/utils";
 import { GoalToggleRow } from "@/components/goals/goal-toggle-row";
@@ -62,6 +63,7 @@ export default async function ClientDetailPage({
     upcomingSessions,
     latestNutrition,
     recentWorkouts,
+    waiver,
   } = data;
 
   const nextSession = upcomingSessions[0];
@@ -98,6 +100,13 @@ export default async function ClientDetailPage({
       />
 
       <div className="flex flex-col gap-3 p-4 pt-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <WaiverBadge
+            acceptedAt={waiver.acceptedAt}
+            intakeHref={`/clients/${id}/intake/edit`}
+          />
+        </div>
+
         {nextSession ? (
           <HeroCard
             label="Next Session"

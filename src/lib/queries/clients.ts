@@ -2,6 +2,7 @@ import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   clients,
+  clientIntake,
   bodyStats,
   workouts,
   sessions,
@@ -103,6 +104,15 @@ export async function getClientDetail(id: string) {
     .orderBy(desc(workouts.performedOn))
     .limit(3);
 
+  const [waiverRow] = await db
+    .select({
+      waiverVersion: clientIntake.waiverVersion,
+      waiverAcceptedAt: clientIntake.waiverAcceptedAt,
+    })
+    .from(clientIntake)
+    .where(eq(clientIntake.clientId, id))
+    .limit(1);
+
   return {
     client,
     latestStats: statsRow ?? null,
@@ -111,6 +121,10 @@ export async function getClientDetail(id: string) {
     upcomingSessions,
     latestNutrition,
     recentWorkouts,
+    waiver: {
+      version: waiverRow?.waiverVersion ?? null,
+      acceptedAt: waiverRow?.waiverAcceptedAt ?? null,
+    },
   };
 }
 

@@ -16,6 +16,7 @@ const config: Config = {
         "accent-blue": "rgb(var(--accent-blue) / <alpha-value>)",
         "accent-green": "rgb(var(--accent-green) / <alpha-value>)",
         "accent-red": "rgb(var(--accent-red) / <alpha-value>)",
+        "accent-amber": "rgb(var(--accent-amber) / <alpha-value>)",
         "border-subtle": "rgb(var(--border-subtle) / <alpha-value>)",
       },
       borderRadius: {
