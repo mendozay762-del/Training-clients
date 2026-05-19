@@ -8,6 +8,7 @@ import {
   intakeFormSchema,
   type IntakeFormData,
 } from "@/lib/schemas/client-intake";
+import { useKeyboardInset } from "@/hooks/use-keyboard-inset";
 import { Section1Personal } from "./sections/section-1-personal";
 import { Section2Logistics } from "./sections/section-2-logistics";
 import { Section3Goals } from "./sections/section-3-goals";
@@ -37,6 +38,7 @@ export function IntakeForm({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const keyboardInset = useKeyboardInset();
 
   const methods = useForm<IntakeFormData>({
     resolver: zodResolver(intakeFormSchema),
@@ -110,7 +112,13 @@ export function IntakeForm({
           </div>
         )}
 
-        <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-subtle bg-base/95 backdrop-blur supports-[backdrop-filter]:bg-base/85 safe-pb">
+        <div
+          className="fixed left-0 right-0 z-30 border-t border-subtle bg-base/95 backdrop-blur supports-[backdrop-filter]:bg-base/85 safe-pb"
+          style={{
+            bottom: keyboardInset > 0 ? keyboardInset : 0,
+            transition: "bottom 120ms ease-out",
+          }}
+        >
           <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3">
             <button
               type="submit"
