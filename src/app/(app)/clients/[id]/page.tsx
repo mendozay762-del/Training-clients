@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Pencil } from "lucide-react";
+import { ClipboardList, Pencil } from "lucide-react";
 import { PageHeader } from "@/components/nav/page-header";
 import { HeroCard } from "@/components/clients/hero-card";
 import { SectionBlock } from "@/components/clients/section-block";
@@ -76,13 +76,24 @@ export default async function ClientDetailPage({
         title={client.name}
         back="/clients"
         actions={
-          <Link
-            href={`/clients/${id}/edit`}
-            aria-label="Edit client"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-card border border-border-subtle/60 hover:bg-card-hover"
-          >
-            <Pencil className="h-4 w-4" />
-          </Link>
+          <>
+            <Link
+              href={`/clients/${id}/intake/edit`}
+              aria-label="Edit intake questionnaire"
+              title="Edit intake questionnaire"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-card border border-border-subtle/60 hover:bg-card-hover"
+            >
+              <ClipboardList className="h-4 w-4" />
+            </Link>
+            <Link
+              href={`/clients/${id}/edit`}
+              aria-label="Edit client"
+              title="Edit basic info"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-card border border-border-subtle/60 hover:bg-card-hover"
+            >
+              <Pencil className="h-4 w-4" />
+            </Link>
+          </>
         }
       />
 
