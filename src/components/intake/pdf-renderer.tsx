@@ -75,11 +75,15 @@ export function PdfRenderer({
 
         const buf = await file.arrayBuffer();
         task = (pdfjs as unknown as {
-          getDocument: (o: { data: ArrayBuffer }) => {
+          getDocument: (o: {
+            data: ArrayBuffer;
+            disableWorker?: boolean;
+            isEvalSupported?: boolean;
+          }) => {
             promise: Promise<PdfDoc>;
             destroy: () => void;
           };
-        }).getDocument({ data: buf });
+        }).getDocument({ data: buf, disableWorker: true });
 
         const pdfDoc = await task!.promise;
         if (cancelled) return;
@@ -301,7 +305,12 @@ function PdfPage({
           viewport,
           transform,
         });
-        await renderTask.promise;
+        await Promise.race([
+          renderTask.promise,
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Render timed out after 15s")), 15000),
+          ),
+        ]);
 
         const textLayer = textLayerRef.current;
         if (!textLayer || cancelled) return;
