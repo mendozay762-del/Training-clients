@@ -33,9 +33,10 @@ export async function createClientFromIntake(
   try {
     parsed = intakeFormSchema.parse(raw);
   } catch (e) {
+    console.error("createClientFromIntake validation failed", e);
     return {
       ok: false,
-      error: e instanceof Error ? e.message : "Validation failed",
+      error: "Some answers look invalid. Please review the highlighted fields and try again.",
     };
   }
 
@@ -169,7 +170,7 @@ export async function createClientFromIntake(
     console.error("createClientFromIntake failed", e);
     return {
       ok: false,
-      error: e instanceof Error ? e.message : "Database write failed",
+      error: "Couldn't save this client. Please try again — if it keeps failing, check your internet connection.",
     };
   }
 }

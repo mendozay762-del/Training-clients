@@ -20,10 +20,6 @@ import { Section8Nutrition } from "./sections/section-8-nutrition";
 import { Section9Final } from "./sections/section-9-final";
 import { SectionAcknowledgment } from "./sections/section-acknowledgment";
 
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
 interface IntakeFormProps {
   defaultValues?: Partial<IntakeFormData>;
   onSubmit: (data: IntakeFormData) => Promise<{ ok: true; clientId: string } | { ok: false; error: string }>;
@@ -52,7 +48,7 @@ export function IntakeForm({
       workActivity: [],
       dietaryPattern: [],
       sharesMeasurements: false,
-      acknowledgedDate: todayIso(),
+      acknowledgedDate: "",
       ...defaultValues,
     },
     mode: "onSubmit",
@@ -60,6 +56,17 @@ export function IntakeForm({
 
   const name = methods.watch("name");
   const acknowledgedName = methods.watch("acknowledgedName");
+  const acknowledgedDate = methods.watch("acknowledgedDate");
+
+  useEffect(() => {
+    if (!acknowledgedDate) {
+      methods.setValue(
+        "acknowledgedDate",
+        new Date().toISOString().slice(0, 10),
+        { shouldValidate: false },
+      );
+    }
+  }, [acknowledgedDate, methods]);
 
   useEffect(() => {
     if (name && !acknowledgedName) {

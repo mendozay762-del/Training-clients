@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,8 +10,11 @@ import { createNutritionNote } from "@/lib/actions/nutrition";
 export function NutritionForm({ clientId }: { clientId: string }) {
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
+  const [today, setToday] = useState("");
 
-  const today = new Date().toISOString().slice(0, 10);
+  useEffect(() => {
+    setToday(new Date().toISOString().slice(0, 10));
+  }, []);
 
   return (
     <form
@@ -27,7 +30,13 @@ export function NutritionForm({ clientId }: { clientId: string }) {
       <input type="hidden" name="clientId" value={clientId} />
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="noteDate">Date</Label>
-        <Input id="noteDate" name="noteDate" type="date" defaultValue={today} />
+        <Input
+          id="noteDate"
+          name="noteDate"
+          type="date"
+          defaultValue={today}
+          key={today}
+        />
       </div>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="bodyMd">Note (Markdown OK)</Label>
