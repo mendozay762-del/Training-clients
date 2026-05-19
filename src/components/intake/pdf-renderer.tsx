@@ -17,7 +17,8 @@ type PdfRenderTask = { promise: Promise<void>; cancel(): void };
 type PdfPageProxy = {
   getViewport(opts: { scale: number; rotation?: number }): PdfViewport;
   render(opts: {
-    canvasContext: CanvasRenderingContext2D;
+    canvas: HTMLCanvasElement;
+    canvasContext?: CanvasRenderingContext2D;
     viewport: PdfViewport;
   }): PdfRenderTask;
   getTextContent(): Promise<{ items: TextItem[]; styles: Record<string, unknown> }>;
@@ -282,10 +283,7 @@ function PdfPage({
         canvas.style.width = `${viewport.width / dpr}px`;
         canvas.style.height = `${viewport.height / dpr}px`;
 
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-
-        renderTask = page.render({ canvasContext: ctx, viewport });
+        renderTask = page.render({ canvas, viewport });
         await renderTask.promise;
 
         const textLayer = textLayerRef.current;
