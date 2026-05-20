@@ -348,16 +348,16 @@ export async function listE1rmSeries(
         and ${workoutSets.isWarmup} = false
         and ${workoutSets.weightLbs} is not null
         and ${workoutSets.reps} > 0
-        and ${workouts.performedOn} >= (current_date - (${days} || ' days')::interval)
+        and ${workouts.performedOn} >= (current_date - make_interval(days => ${days}::int))
       group by ${workoutExercises.exerciseName}, exercise_key, ${workouts.performedOn}
     ),
     exercise_freq as (
       select exercise_key, count(*) as session_count
       from per_session
       group by exercise_key
-      having count(*) >= ${minSessions}
+      having count(*) >= ${minSessions}::int
       order by count(*) desc, max(best_e1rm) desc
-      limit ${topN}
+      limit ${topN}::int
     )
     select ps.exercise_name, ps.performed_on, ps.best_e1rm, ef.session_count
     from per_session ps
@@ -383,6 +383,7 @@ export async function listWorkoutsPerWeek(
   clientId: string,
   weeks = 12,
 ): Promise<AdherenceWeek[]> {
+  const weeksBack = Math.max(0, weeks - 1);
   const rows = await db.execute<{
     week_start: string;
     completed: number;
@@ -395,7 +396,7 @@ export async function listWorkoutsPerWeek(
       coalesce(p.planned, 0)::int as prescribed,
       coalesce(p.skipped, 0)::int as skipped
     from generate_series(
-      date_trunc('week', current_date) - ((${weeks} - 1) || ' weeks')::interval,
+      date_trunc('week', current_date) - make_interval(weeks => ${weeksBack}::int),
       date_trunc('week', current_date),
       interval '1 week'
     ) as gs
