@@ -177,23 +177,42 @@ export async function listWorkouts(clientId: string) {
       id: workouts.id,
       performedOn: workouts.performedOn,
       notes: workouts.notes,
-      exerciseCount: sql<number>`(
-        select count(*)::int
-        from ${workoutExercises}
-        where ${workoutExercises.workoutId} = ${workouts.id}
-      )`,
-      setCount: sql<number>`(
-        select count(*)::int
-        from ${workoutSets}
-        inner join ${workoutExercises}
-          on ${workoutSets.exerciseId} = ${workoutExercises.id}
-        where ${workoutExercises.workoutId} = ${workouts.id}
-      )`,
     })
     .from(workouts)
     .where(eq(workouts.clientId, clientId))
     .orderBy(desc(workouts.performedOn), desc(workouts.createdAt));
-  return rows;
+
+  if (rows.length === 0) return [];
+
+  const workoutIds = rows.map((r) => r.id);
+
+  const exerciseCounts = await db
+    .select({
+      workoutId: workoutExercises.workoutId,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(workoutExercises)
+    .where(inArray(workoutExercises.workoutId, workoutIds))
+    .groupBy(workoutExercises.workoutId);
+
+  const setCounts = await db
+    .select({
+      workoutId: workoutExercises.workoutId,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(workoutSets)
+    .innerJoin(workoutExercises, eq(workoutSets.exerciseId, workoutExercises.id))
+    .where(inArray(workoutExercises.workoutId, workoutIds))
+    .groupBy(workoutExercises.workoutId);
+
+  const exerciseMap = new Map(exerciseCounts.map((e) => [e.workoutId, e.count]));
+  const setMap = new Map(setCounts.map((s) => [s.workoutId, s.count]));
+
+  return rows.map((r) => ({
+    ...r,
+    exerciseCount: exerciseMap.get(r.id) ?? 0,
+    setCount: setMap.get(r.id) ?? 0,
+  }));
 }
 
 export async function getWorkoutDetail(workoutId: string) {
