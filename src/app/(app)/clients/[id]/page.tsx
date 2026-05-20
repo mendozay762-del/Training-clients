@@ -5,9 +5,14 @@ import { PageHeader } from "@/components/nav/page-header";
 import { HeroCard } from "@/components/clients/hero-card";
 import { SectionBlock } from "@/components/clients/section-block";
 import { WaiverBadge } from "@/components/clients/waiver-badge";
-import { getClientDetail } from "@/lib/queries/clients";
+import {
+  getClientDetail,
+  getTodaysPrescription,
+  listBlocks,
+} from "@/lib/queries/clients";
 import { relativeDays } from "@/lib/utils";
 import { GoalToggleRow } from "@/components/goals/goal-toggle-row";
+import { TodaysPlanCard } from "@/components/program/todays-plan-card";
 
 export const dynamic = "force-dynamic";
 
@@ -52,8 +57,17 @@ export default async function ClientDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const data = await getClientDetail(id);
+  const [data, todaysPlan, blocks] = await Promise.all([
+    getClientDetail(id),
+    getTodaysPrescription(id),
+    listBlocks(id),
+  ]);
   if (!data) notFound();
+
+  const activeBlock =
+    blocks.find((b) => b.status === "active") ??
+    blocks.find((b) => b.status === "draft") ??
+    null;
 
   const {
     client,
@@ -116,6 +130,18 @@ export default async function ClientDetailPage({
             intakeHref={`/clients/${id}/intake/edit`}
           />
         </div>
+
+        {todaysPlan && (
+          <TodaysPlanCard
+            clientId={id}
+            prescribedId={todaysPlan.id}
+            blockId={todaysPlan.blockId}
+            name={todaysPlan.name}
+            status={todaysPlan.status}
+            exerciseCount={todaysPlan.exerciseCount}
+            actualWorkoutId={todaysPlan.actualWorkoutId}
+          />
+        )}
 
         {nextSession ? (
           <HeroCard
@@ -202,6 +228,26 @@ export default async function ClientDetailPage({
                 </span>
               </div>
             ))}
+        </SectionBlock>
+
+        <SectionBlock
+          label="Program"
+          addHref={`/clients/${id}/program/new`}
+          viewHref={`/clients/${id}/program`}
+          count={blocks.length}
+          empty="No training blocks yet."
+        >
+          {activeBlock && (
+            <div className="text-sm">
+              <span className="font-medium">{activeBlock.name}</span>
+              <span className="text-text-tertiary">
+                {" "}
+                · {activeBlock.workoutCount} workout
+                {activeBlock.workoutCount === 1 ? "" : "s"}
+                {" "}· {activeBlock.status}
+              </span>
+            </div>
+          )}
         </SectionBlock>
 
         <SectionBlock
