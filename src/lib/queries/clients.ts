@@ -372,14 +372,28 @@ export async function listE1rmSeries(
   }));
 }
 
+export type AdherenceWeek = {
+  weekStart: string;
+  completed: number;
+  prescribed: number;
+  skipped: number;
+};
+
 export async function listWorkoutsPerWeek(
   clientId: string,
   weeks = 12,
-): Promise<{ weekStart: string; count: number }[]> {
-  const rows = await db.execute<{ week_start: string; count: number }>(sql`
+): Promise<AdherenceWeek[]> {
+  const rows = await db.execute<{
+    week_start: string;
+    completed: number;
+    prescribed: number;
+    skipped: number;
+  }>(sql`
     select
       gs::date as week_start,
-      coalesce(c.cnt, 0)::int as count
+      coalesce(c.cnt, 0)::int as completed,
+      coalesce(p.planned, 0)::int as prescribed,
+      coalesce(p.skipped, 0)::int as skipped
     from generate_series(
       date_trunc('week', current_date) - ((${weeks} - 1) || ' weeks')::interval,
       date_trunc('week', current_date),
@@ -392,12 +406,23 @@ export async function listWorkoutsPerWeek(
       where ${workouts.clientId} = ${clientId}
       group by week_start
     ) c on c.week_start = gs::date
+    left join (
+      select
+        date_trunc('week', ${prescribedWorkouts.prescribedFor}::timestamp)::date as week_start,
+        count(*) filter (where ${prescribedWorkouts.status} <> 'skipped') as planned,
+        count(*) filter (where ${prescribedWorkouts.status} = 'skipped') as skipped
+      from ${prescribedWorkouts}
+      where ${prescribedWorkouts.clientId} = ${clientId}
+      group by week_start
+    ) p on p.week_start = gs::date
     order by gs
   `);
 
   return rows.rows.map((r) => ({
     weekStart: r.week_start,
-    count: Number(r.count),
+    completed: Number(r.completed),
+    prescribed: Number(r.prescribed),
+    skipped: Number(r.skipped),
   }));
 }
 
