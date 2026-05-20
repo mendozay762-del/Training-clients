@@ -318,6 +318,96 @@ export const clientMessages = pgTable(
   }),
 );
 
+export const trainingBlocks = pgTable(
+  "training_blocks",
+  {
+    id,
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    style: text("style"),
+    startDate: date("start_date"),
+    endDate: date("end_date"),
+    weeklySplitSummary: text("weekly_split_summary"),
+    notes: text("notes"),
+    status: text("status").notNull().default("draft"),
+    createdAt,
+    updatedAt,
+  },
+  (t) => ({
+    clientStatusIdx: index("training_blocks_client_status_idx").on(
+      t.clientId,
+      t.status,
+    ),
+    clientStartIdx: index("training_blocks_client_start_idx").on(
+      t.clientId,
+      t.startDate,
+    ),
+  }),
+);
+
+export const prescribedWorkouts = pgTable(
+  "prescribed_workouts",
+  {
+    id,
+    blockId: uuid("block_id")
+      .notNull()
+      .references(() => trainingBlocks.id, { onDelete: "cascade" }),
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    prescribedFor: date("prescribed_for").notNull(),
+    name: text("name"),
+    notes: text("notes"),
+    status: text("status").notNull().default("planned"),
+    skipReason: text("skip_reason"),
+    actualWorkoutId: uuid("actual_workout_id").references(() => workouts.id, {
+      onDelete: "set null",
+    }),
+    createdAt,
+    updatedAt,
+  },
+  (t) => ({
+    clientDateIdx: index("prescribed_workouts_client_date_idx").on(
+      t.clientId,
+      t.prescribedFor,
+    ),
+    blockDateIdx: index("prescribed_workouts_block_date_idx").on(
+      t.blockId,
+      t.prescribedFor,
+    ),
+  }),
+);
+
+export const prescribedExercises = pgTable(
+  "prescribed_exercises",
+  {
+    id,
+    prescribedWorkoutId: uuid("prescribed_workout_id")
+      .notNull()
+      .references(() => prescribedWorkouts.id, { onDelete: "cascade" }),
+    exerciseName: text("exercise_name").notNull(),
+    orderIndex: integer("order_index").notNull(),
+    sets: integer("sets"),
+    repsLow: integer("reps_low"),
+    repsHigh: integer("reps_high"),
+    repsText: text("reps_text"),
+    loadLbs: numeric("load_lbs", { precision: 6, scale: 2 }),
+    loadPct1rm: numeric("load_pct_1rm", { precision: 5, scale: 2 }),
+    loadText: text("load_text"),
+    rpeTarget: numeric("rpe_target", { precision: 3, scale: 1 }),
+    rirTarget: integer("rir_target"),
+    notes: text("notes"),
+  },
+  (t) => ({
+    uniqueOrder: unique("prescribed_exercises_order_uniq").on(
+      t.prescribedWorkoutId,
+      t.orderIndex,
+    ),
+  }),
+);
+
 export type Client = typeof clients.$inferSelect;
 export type NewClient = typeof clients.$inferInsert;
 export type ClientIntake = typeof clientIntake.$inferSelect;
@@ -331,3 +421,9 @@ export type Goal = typeof goals.$inferSelect;
 export type NutritionNote = typeof nutritionNotes.$inferSelect;
 export type ClientMessage = typeof clientMessages.$inferSelect;
 export type NewClientMessage = typeof clientMessages.$inferInsert;
+export type TrainingBlock = typeof trainingBlocks.$inferSelect;
+export type NewTrainingBlock = typeof trainingBlocks.$inferInsert;
+export type PrescribedWorkout = typeof prescribedWorkouts.$inferSelect;
+export type NewPrescribedWorkout = typeof prescribedWorkouts.$inferInsert;
+export type PrescribedExercise = typeof prescribedExercises.$inferSelect;
+export type NewPrescribedExercise = typeof prescribedExercises.$inferInsert;

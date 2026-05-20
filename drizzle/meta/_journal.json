@@ -43,6 +43,13 @@
       "when": 1779229971407,
       "tag": "0005_last_morlocks",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1779236829312,
+      "tag": "0006_friendly_tomas",
+      "breakpoints": true
     }
   ]
 }

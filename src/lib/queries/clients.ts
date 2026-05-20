@@ -11,6 +11,9 @@ import {
   sessions,
   goals,
   nutritionNotes,
+  trainingBlocks,
+  prescribedWorkouts,
+  prescribedExercises,
 } from "@/db/schema";
 
 export async function listClients() {
@@ -416,4 +419,108 @@ export async function getWeekSummary() {
     totalClients: total,
     loggedThisWeek: loggedRows.length,
   };
+}
+
+export async function listBlocks(clientId: string) {
+  return db
+    .select({
+      id: trainingBlocks.id,
+      name: trainingBlocks.name,
+      style: trainingBlocks.style,
+      status: trainingBlocks.status,
+      startDate: trainingBlocks.startDate,
+      endDate: trainingBlocks.endDate,
+      weeklySplitSummary: trainingBlocks.weeklySplitSummary,
+      updatedAt: trainingBlocks.updatedAt,
+      workoutCount: sql<number>`(
+        select count(*)::int
+        from ${prescribedWorkouts}
+        where ${prescribedWorkouts.blockId} = ${trainingBlocks.id}
+      )`,
+    })
+    .from(trainingBlocks)
+    .where(eq(trainingBlocks.clientId, clientId))
+    .orderBy(
+      sql`case ${trainingBlocks.status} when 'active' then 0 when 'draft' then 1 else 2 end`,
+      desc(trainingBlocks.startDate),
+      desc(trainingBlocks.createdAt),
+    );
+}
+
+export async function getBlock(blockId: string) {
+  const [row] = await db
+    .select()
+    .from(trainingBlocks)
+    .where(eq(trainingBlocks.id, blockId))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function getBlockDetail(blockId: string) {
+  const block = await getBlock(blockId);
+  if (!block) return null;
+
+  const prescribed = await db
+    .select({
+      id: prescribedWorkouts.id,
+      prescribedFor: prescribedWorkouts.prescribedFor,
+      name: prescribedWorkouts.name,
+      status: prescribedWorkouts.status,
+      actualWorkoutId: prescribedWorkouts.actualWorkoutId,
+      exerciseCount: sql<number>`(
+        select count(*)::int
+        from ${prescribedExercises}
+        where ${prescribedExercises.prescribedWorkoutId} = ${prescribedWorkouts.id}
+      )`,
+    })
+    .from(prescribedWorkouts)
+    .where(eq(prescribedWorkouts.blockId, blockId))
+    .orderBy(asc(prescribedWorkouts.prescribedFor));
+
+  return { block, prescribed };
+}
+
+export async function getPrescribedWorkoutDetail(workoutId: string) {
+  const [workout] = await db
+    .select()
+    .from(prescribedWorkouts)
+    .where(eq(prescribedWorkouts.id, workoutId))
+    .limit(1);
+  if (!workout) return null;
+
+  const exercises = await db
+    .select()
+    .from(prescribedExercises)
+    .where(eq(prescribedExercises.prescribedWorkoutId, workoutId))
+    .orderBy(asc(prescribedExercises.orderIndex));
+
+  return { workout, exercises };
+}
+
+export async function getTodaysPrescription(clientId: string) {
+  const today = new Date().toISOString().slice(0, 10);
+  const [row] = await db
+    .select({
+      id: prescribedWorkouts.id,
+      blockId: prescribedWorkouts.blockId,
+      name: prescribedWorkouts.name,
+      status: prescribedWorkouts.status,
+      prescribedFor: prescribedWorkouts.prescribedFor,
+      actualWorkoutId: prescribedWorkouts.actualWorkoutId,
+      exerciseCount: sql<number>`(
+        select count(*)::int
+        from ${prescribedExercises}
+        where ${prescribedExercises.prescribedWorkoutId} = ${prescribedWorkouts.id}
+      )`,
+    })
+    .from(prescribedWorkouts)
+    .where(
+      and(
+        eq(prescribedWorkouts.clientId, clientId),
+        eq(prescribedWorkouts.prescribedFor, today),
+      ),
+    )
+    .orderBy(prescribedWorkouts.createdAt)
+    .limit(1);
+  return row ?? null;
 }
