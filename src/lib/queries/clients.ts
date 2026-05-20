@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   clients,
@@ -215,9 +215,7 @@ export async function getWorkoutDetail(workoutId: string) {
     ? await db
         .select()
         .from(workoutSets)
-        .where(
-          sql`${workoutSets.exerciseId} in ${exerciseIds}`,
-        )
+        .where(inArray(workoutSets.exerciseId, exerciseIds))
         .orderBy(asc(workoutSets.setIndex))
     : [];
 
