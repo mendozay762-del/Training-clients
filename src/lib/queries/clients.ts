@@ -273,6 +273,23 @@ export async function getNextSessionAcrossClients() {
   return rows[0] ?? null;
 }
 
+export async function listSessions(clientId: string) {
+  return db
+    .select()
+    .from(sessions)
+    .where(eq(sessions.clientId, clientId))
+    .orderBy(desc(sessions.startsAt));
+}
+
+export async function getSession(sessionId: string) {
+  const [row] = await db
+    .select()
+    .from(sessions)
+    .where(eq(sessions.id, sessionId))
+    .limit(1);
+  return row ?? null;
+}
+
 export type ClientPr = {
   exerciseName: string;
   weightLbs: number;
