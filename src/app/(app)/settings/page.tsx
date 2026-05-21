@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/nav/page-header";
+import { logout } from "@/lib/actions/auth";
 
 export default function SettingsPage() {
   return (
@@ -19,9 +20,19 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        <p className="px-2 text-center text-xs text-text-tertiary">
-          Sign-out and account management arrive in milestone 4.
-        </p>
+        <section className="rounded-card bg-card p-4">
+          <div className="text-xs font-medium uppercase tracking-wider text-text-secondary">
+            Account
+          </div>
+          <form action={logout} className="mt-3">
+            <button
+              type="submit"
+              className="w-full rounded-btn bg-card-hover/40 px-4 py-2.5 text-sm font-medium text-accent-red hover:bg-card-hover"
+            >
+              Sign out
+            </button>
+          </form>
+        </section>
       </div>
     </>
   );
