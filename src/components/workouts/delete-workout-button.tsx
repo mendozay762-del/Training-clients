@@ -22,7 +22,7 @@ export function DeleteWorkoutButton({ workoutId, clientId }: Props) {
     }
     startTransition(async () => {
       await deleteWorkout(workoutId, clientId);
-      router.push(`/clients/${clientId}/workouts`);
+      router.replace(`/clients/${clientId}/workouts`);
     });
   }
 

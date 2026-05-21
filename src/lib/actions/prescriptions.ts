@@ -375,12 +375,11 @@ export async function startSessionFromPrescription(
     );
   }
 
-  const today = new Date().toISOString().slice(0, 10);
   const [workout] = await db
     .insert(workouts)
     .values({
       clientId: prescription.clientId,
-      performedOn: today,
+      performedOn: prescription.prescribedFor,
     })
     .returning({ id: workouts.id });
   if (!workout) throw new Error("Failed to start session");
