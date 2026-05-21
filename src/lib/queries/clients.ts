@@ -22,35 +22,64 @@ export async function listClients() {
       id: clients.id,
       name: clients.name,
       active: clients.active,
-      lastWorkoutOn: sql<string | null>`(
-        select ${workouts.performedOn}
-        from ${workouts}
-        where ${workouts.clientId} = ${clients.id}
-        order by ${workouts.performedOn} desc
-        limit 1
-      )`,
-      nextSessionAt: sql<Date | null>`(
-        select ${sessions.startsAt}
-        from ${sessions}
-        where ${sessions.clientId} = ${clients.id}
-          and ${sessions.startsAt} >= now()
-          and ${sessions.status} = 'scheduled'
-        order by ${sessions.startsAt} asc
-        limit 1
-      )`,
-      openActionCount: sql<number>`(
-        select count(*)::int
-        from ${clientMessages}
-        where ${clientMessages.clientId} = ${clients.id}
-          and ${clientMessages.actionItem} is not null
-          and ${clientMessages.actionDone} = false
-      )`,
     })
     .from(clients)
     .where(eq(clients.active, true))
     .orderBy(desc(clients.createdAt));
 
-  return rows;
+  if (rows.length === 0) return [];
+
+  const ids = rows.map((r) => r.id);
+
+  const lastWorkouts = await db
+    .select({
+      clientId: workouts.clientId,
+      lastWorkoutOn: sql<string | null>`max(${workouts.performedOn})`,
+    })
+    .from(workouts)
+    .where(inArray(workouts.clientId, ids))
+    .groupBy(workouts.clientId);
+
+  const nextSessions = await db
+    .select({
+      clientId: sessions.clientId,
+      nextSessionAt: sql<Date | null>`min(${sessions.startsAt})`,
+    })
+    .from(sessions)
+    .where(
+      and(
+        inArray(sessions.clientId, ids),
+        gte(sessions.startsAt, new Date()),
+        eq(sessions.status, "scheduled"),
+      ),
+    )
+    .groupBy(sessions.clientId);
+
+  const openActions = await db
+    .select({
+      clientId: clientMessages.clientId,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(clientMessages)
+    .where(
+      and(
+        inArray(clientMessages.clientId, ids),
+        eq(clientMessages.actionDone, false),
+        sql`${clientMessages.actionItem} is not null`,
+      ),
+    )
+    .groupBy(clientMessages.clientId);
+
+  const lastMap = new Map(lastWorkouts.map((r) => [r.clientId, r.lastWorkoutOn]));
+  const nextMap = new Map(nextSessions.map((r) => [r.clientId, r.nextSessionAt]));
+  const actionMap = new Map(openActions.map((r) => [r.clientId, r.count]));
+
+  return rows.map((r) => ({
+    ...r,
+    lastWorkoutOn: lastMap.get(r.id) ?? null,
+    nextSessionAt: nextMap.get(r.id) ?? null,
+    openActionCount: actionMap.get(r.id) ?? 0,
+  }));
 }
 
 export async function getClient(id: string) {
@@ -482,7 +511,7 @@ export async function getWeekSummary() {
 }
 
 export async function listBlocks(clientId: string) {
-  return db
+  const rows = await db
     .select({
       id: trainingBlocks.id,
       name: trainingBlocks.name,
@@ -492,11 +521,6 @@ export async function listBlocks(clientId: string) {
       endDate: trainingBlocks.endDate,
       weeklySplitSummary: trainingBlocks.weeklySplitSummary,
       updatedAt: trainingBlocks.updatedAt,
-      workoutCount: sql<number>`(
-        select count(*)::int
-        from ${prescribedWorkouts}
-        where ${prescribedWorkouts.blockId} = ${trainingBlocks.id}
-      )`,
     })
     .from(trainingBlocks)
     .where(eq(trainingBlocks.clientId, clientId))
@@ -505,6 +529,21 @@ export async function listBlocks(clientId: string) {
       desc(trainingBlocks.startDate),
       desc(trainingBlocks.createdAt),
     );
+
+  if (rows.length === 0) return [];
+
+  const blockIds = rows.map((r) => r.id);
+  const counts = await db
+    .select({
+      blockId: prescribedWorkouts.blockId,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(prescribedWorkouts)
+    .where(inArray(prescribedWorkouts.blockId, blockIds))
+    .groupBy(prescribedWorkouts.blockId);
+
+  const countMap = new Map(counts.map((c) => [c.blockId, c.count]));
+  return rows.map((r) => ({ ...r, workoutCount: countMap.get(r.id) ?? 0 }));
 }
 
 export async function getBlock(blockId: string) {
@@ -520,22 +559,35 @@ export async function getBlockDetail(blockId: string) {
   const block = await getBlock(blockId);
   if (!block) return null;
 
-  const prescribed = await db
+  const prescribedRows = await db
     .select({
       id: prescribedWorkouts.id,
       prescribedFor: prescribedWorkouts.prescribedFor,
       name: prescribedWorkouts.name,
       status: prescribedWorkouts.status,
       actualWorkoutId: prescribedWorkouts.actualWorkoutId,
-      exerciseCount: sql<number>`(
-        select count(*)::int
-        from ${prescribedExercises}
-        where ${prescribedExercises.prescribedWorkoutId} = ${prescribedWorkouts.id}
-      )`,
     })
     .from(prescribedWorkouts)
     .where(eq(prescribedWorkouts.blockId, blockId))
     .orderBy(asc(prescribedWorkouts.prescribedFor));
+
+  const ids = prescribedRows.map((p) => p.id);
+  const counts = ids.length
+    ? await db
+        .select({
+          prescribedWorkoutId: prescribedExercises.prescribedWorkoutId,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(prescribedExercises)
+        .where(inArray(prescribedExercises.prescribedWorkoutId, ids))
+        .groupBy(prescribedExercises.prescribedWorkoutId)
+    : [];
+
+  const countMap = new Map(counts.map((c) => [c.prescribedWorkoutId, c.count]));
+  const prescribed = prescribedRows.map((p) => ({
+    ...p,
+    exerciseCount: countMap.get(p.id) ?? 0,
+  }));
 
   return { block, prescribed };
 }
@@ -567,11 +619,6 @@ export async function getTodaysPrescription(clientId: string) {
       status: prescribedWorkouts.status,
       prescribedFor: prescribedWorkouts.prescribedFor,
       actualWorkoutId: prescribedWorkouts.actualWorkoutId,
-      exerciseCount: sql<number>`(
-        select count(*)::int
-        from ${prescribedExercises}
-        where ${prescribedExercises.prescribedWorkoutId} = ${prescribedWorkouts.id}
-      )`,
     })
     .from(prescribedWorkouts)
     .where(
@@ -582,5 +629,12 @@ export async function getTodaysPrescription(clientId: string) {
     )
     .orderBy(prescribedWorkouts.createdAt)
     .limit(1);
-  return row ?? null;
+  if (!row) return null;
+
+  const [countRow] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(prescribedExercises)
+    .where(eq(prescribedExercises.prescribedWorkoutId, row.id));
+
+  return { ...row, exerciseCount: countRow?.count ?? 0 };
 }
