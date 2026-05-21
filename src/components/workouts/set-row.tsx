@@ -169,6 +169,7 @@ function CellInput({
 }: CellInputProps) {
   const [focused, setFocused] = useState(false);
   const [draft, setDraft] = useState(value);
+  const [focusValue, setFocusValue] = useState(value);
 
   // Keep draft in sync if parent value changes externally (e.g. prefill).
   if (!focused && draft !== value) {
@@ -187,6 +188,7 @@ function CellInput({
         value={focused ? draft : value}
         onFocus={() => {
           setDraft(value);
+          setFocusValue(value);
           setFocused(true);
         }}
         onChange={(e) => {
@@ -195,7 +197,7 @@ function CellInput({
         }}
         onBlur={() => {
           setFocused(false);
-          if (draft !== value) {
+          if (draft !== focusValue) {
             onCommit(draft);
           }
         }}
