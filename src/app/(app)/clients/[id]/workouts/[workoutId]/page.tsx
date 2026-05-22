@@ -24,7 +24,7 @@ export default async function WorkoutDetailPage({
     <>
       <PageHeader
         title="Session"
-        back={`/clients/${id}/workouts`}
+        back={`/clients/${id}`}
         actions={<DeleteWorkoutButton workoutId={workoutId} clientId={id} />}
       />
 

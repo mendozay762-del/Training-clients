@@ -21,7 +21,7 @@ export default async function NewWorkoutPage({
 
   return (
     <>
-      <PageHeader title="New workout" back={`/clients/${id}/workouts`} />
+      <PageHeader title="New workout" back={`/clients/${id}`} />
 
       <div className="flex flex-col gap-4 p-4">
         <form action={startWorkout} className="flex flex-col gap-3 rounded-card bg-card p-4">

@@ -12,21 +12,10 @@ interface Props {
 export function BackButton({ fallback, className, label = "Back" }: Props) {
   const router = useRouter();
 
-  function onClick() {
-    // Prefer true browser-back so the user returns to the exact page they
-    // came from. Fall back to the hierarchical parent on a cold load
-    // (deep link, refresh, or PWA launch) where there's no in-app history.
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
-    } else {
-      router.push(fallback);
-    }
-  }
-
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={() => router.push(fallback)}
       aria-label={label}
       className={
         className ??

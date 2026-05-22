@@ -44,7 +44,7 @@ export default async function PrescribedWorkoutPage({
     <>
       <PageHeader
         title={workout.name ?? "Prescribed workout"}
-        back={`/clients/${id}/program/${blockId}`}
+        back={`/clients/${id}`}
       />
 
       <div className="flex flex-col gap-4 p-4">

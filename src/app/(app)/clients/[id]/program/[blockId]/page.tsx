@@ -89,7 +89,7 @@ export default async function BlockDetailPage({
     <>
       <PageHeader
         title={block.name}
-        back={`/clients/${id}/program`}
+        back={`/clients/${id}`}
         actions={
           <Link
             href={`/clients/${id}/program/${blockId}/edit`}

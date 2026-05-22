@@ -16,7 +16,7 @@ export default async function NewBlockPage({
 
   return (
     <>
-      <PageHeader title="New block" back={`/clients/${id}/program`} />
+      <PageHeader title="New block" back={`/clients/${id}`} />
       <div className="p-4">
         <section className="rounded-card bg-card p-4">
           <p className="mb-4 text-sm text-text-secondary">

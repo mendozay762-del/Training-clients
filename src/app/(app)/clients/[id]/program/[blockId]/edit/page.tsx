@@ -19,7 +19,7 @@ export default async function EditBlockPage({
     <>
       <PageHeader
         title="Edit block"
-        back={`/clients/${id}/program/${blockId}`}
+        back={`/clients/${id}`}
       />
       <div className="flex flex-col gap-4 p-4">
         <section className="rounded-card bg-card p-4">

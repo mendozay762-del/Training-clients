@@ -17,7 +17,7 @@ export default async function EditSessionPage({
 
   return (
     <>
-      <PageHeader title="Edit session" back={`/clients/${id}/sessions`} />
+      <PageHeader title="Edit session" back={`/clients/${id}`} />
       <div className="flex flex-col gap-4 p-4">
         <section className="rounded-card bg-card p-4">
           <SessionForm clientId={id} initial={session} />
