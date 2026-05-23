@@ -17,6 +17,7 @@ export function ActionItemToggle({ id, clientId, actionItem, done }: Props) {
   return (
     <button
       type="button"
+      aria-pressed={done}
       disabled={isPending}
       onClick={() =>
         startTransition(async () => {

@@ -18,6 +18,7 @@ export function GoalToggleRow({ id, clientId, body, done }: Props) {
   return (
     <button
       type="button"
+      aria-pressed={done}
       disabled={isPending}
       onClick={() =>
         startTransition(async () => {
