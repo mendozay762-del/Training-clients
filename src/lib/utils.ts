@@ -24,14 +24,31 @@ export function relativeDays(date: Date | string | null | undefined): string {
   return `${Math.floor(diffDays / 30)}mo ago`;
 }
 
-export function formatWeekStart(date: Date): string {
-  const day = date.getUTCDay();
+export const APP_TIMEZONE = "America/Chicago";
+
+// Current calendar date (YYYY-MM-DD) in the app's timezone, so "today" and
+// "this week" don't roll a day early/late vs UTC.
+export function todayInAppTz(): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: APP_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const get = (type: string) =>
+    parts.find((p) => p.type === type)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+// Monday (YYYY-MM-DD) of the week containing a date-only string.
+export function weekStartFor(isoDate: string): string {
+  const d = new Date(`${isoDate}T00:00:00Z`);
+  const day = d.getUTCDay();
   const diff = day === 0 ? -6 : 1 - day;
-  const monday = new Date(date);
-  monday.setUTCDate(date.getUTCDate() + diff);
-  return monday.toISOString().slice(0, 10);
+  d.setUTCDate(d.getUTCDate() + diff);
+  return d.toISOString().slice(0, 10);
 }
 
 export function currentWeekStart(): string {
-  return formatWeekStart(new Date());
+  return weekStartFor(todayInAppTz());
 }

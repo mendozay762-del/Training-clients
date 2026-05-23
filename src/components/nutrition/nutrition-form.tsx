@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { createNutritionNote } from "@/lib/actions/nutrition";
+import { todayInAppTz } from "@/lib/utils";
 
 export function NutritionForm({ clientId }: { clientId: string }) {
   const [isPending, startTransition] = useTransition();
@@ -13,7 +14,7 @@ export function NutritionForm({ clientId }: { clientId: string }) {
   const [today, setToday] = useState("");
 
   useEffect(() => {
-    setToday(new Date().toISOString().slice(0, 10));
+    setToday(todayInAppTz());
   }, []);
 
   return (

@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { and, eq, max } from "drizzle-orm";
 import { db } from "@/db";
-import { workouts, workoutExercises, workoutSets } from "@/db/schema";
+import {
+  workouts,
+  workoutExercises,
+  workoutSets,
+  prescribedWorkouts,
+} from "@/db/schema";
 import {
   addExerciseSchema,
   endWorkoutSchema,
@@ -215,10 +220,18 @@ export async function updateWorkoutDate(formData: FormData) {
 }
 
 export async function deleteWorkout(workoutId: string, clientId: string) {
+  // Unlink any prescription pointing at this workout so it doesn't stay
+  // marked "completed" with a dangling link.
+  await db
+    .update(prescribedWorkouts)
+    .set({ status: "planned", actualWorkoutId: null, updatedAt: new Date() })
+    .where(eq(prescribedWorkouts.actualWorkoutId, workoutId));
+
   await db.delete(workouts).where(
     and(eq(workouts.id, workoutId), eq(workouts.clientId, clientId)),
   );
   revalidatePath(`/clients/${clientId}`);
+  revalidatePath(`/clients/${clientId}/program`);
   revalidatePath(`/clients/${clientId}/workouts`);
 }
 

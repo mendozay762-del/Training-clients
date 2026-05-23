@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
+import { todayInAppTz } from "@/lib/utils";
 import {
   clients,
   clientIntake,
@@ -491,8 +492,8 @@ export async function listWorkoutsPerWeek(
 }
 
 export async function getWeekSummary() {
-  const weekAgo = new Date();
-  weekAgo.setDate(weekAgo.getDate() - 7);
+  const weekAgo = new Date(`${todayInAppTz()}T00:00:00Z`);
+  weekAgo.setUTCDate(weekAgo.getUTCDate() - 7);
 
   const [{ total } = { total: 0 }] = await db
     .select({ total: sql<number>`count(*)::int` })
@@ -610,7 +611,7 @@ export async function getPrescribedWorkoutDetail(workoutId: string) {
 }
 
 export async function getTodaysPrescription(clientId: string) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayInAppTz();
   const [row] = await db
     .select({
       id: prescribedWorkouts.id,

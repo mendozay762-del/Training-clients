@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getClient } from "@/lib/queries/clients";
 import { startWorkout } from "@/lib/actions/workouts";
+import { todayInAppTz } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,7 @@ export default async function NewWorkoutPage({
   const client = await getClient(id);
   if (!client) notFound();
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayInAppTz();
 
   return (
     <>

@@ -10,14 +10,7 @@ import {
   type IntakeFormData,
   type IntakeFormParsed,
 } from "@/lib/schemas/client-intake";
-
-function isoMondayOf(d: Date): string {
-  const date = new Date(d);
-  const day = date.getDay();
-  const diff = (day + 6) % 7;
-  date.setDate(date.getDate() - diff);
-  return date.toISOString().slice(0, 10);
-}
+import { currentWeekStart } from "@/lib/utils";
 
 function numericOrNull(v: number | undefined): string | null {
   if (v === undefined || Number.isNaN(v)) return null;
@@ -167,7 +160,7 @@ export async function createClientFromIntake(
     if (hasMeasurements) {
       await db.insert(bodyStats).values({
         clientId: client.id,
-        weekStart: isoMondayOf(new Date()),
+        weekStart: currentWeekStart(),
         weightLbs: numericOrNull(parsed.weightLbs),
         waistIn: numericOrNull(parsed.waistIn),
         chestIn: numericOrNull(parsed.chestIn),

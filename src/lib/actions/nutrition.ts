@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { nutritionNotes } from "@/db/schema";
 import { nutritionFormSchema } from "@/lib/schemas/nutrition";
+import { todayInAppTz } from "@/lib/utils";
 
 export async function createNutritionNote(formData: FormData) {
   const parsed = nutritionFormSchema.parse({
@@ -18,7 +19,7 @@ export async function createNutritionNote(formData: FormData) {
     noteDate:
       parsed.noteDate && parsed.noteDate.length > 0
         ? parsed.noteDate
-        : new Date().toISOString().slice(0, 10),
+        : todayInAppTz(),
     bodyMd: parsed.bodyMd,
   });
 

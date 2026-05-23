@@ -9,6 +9,7 @@ import {
   type IntakeFormData,
 } from "@/lib/schemas/client-intake";
 import { useKeyboardInset } from "@/hooks/use-keyboard-inset";
+import { todayInAppTz } from "@/lib/utils";
 import { Section1Personal } from "./sections/section-1-personal";
 import { Section2Logistics } from "./sections/section-2-logistics";
 import { Section3Goals } from "./sections/section-3-goals";
@@ -62,7 +63,7 @@ export function IntakeForm({
     if (!acknowledgedDate) {
       methods.setValue(
         "acknowledgedDate",
-        new Date().toISOString().slice(0, 10),
+        todayInAppTz(),
         { shouldValidate: false },
       );
     }
