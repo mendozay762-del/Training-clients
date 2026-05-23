@@ -408,6 +408,23 @@ export const prescribedExercises = pgTable(
   }),
 );
 
+export const loginAttempts = pgTable(
+  "login_attempts",
+  {
+    id,
+    identifier: text("identifier").notNull(),
+    attemptedAt: timestamp("attempted_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    identifierIdx: index("login_attempts_identifier_idx").on(
+      t.identifier,
+      t.attemptedAt,
+    ),
+  }),
+);
+
 export type Client = typeof clients.$inferSelect;
 export type NewClient = typeof clients.$inferInsert;
 export type ClientIntake = typeof clientIntake.$inferSelect;
