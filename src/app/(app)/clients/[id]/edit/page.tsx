@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/nav/page-header";
 import { ClientForm } from "@/components/clients/client-form";
-import { updateClient, deleteClient } from "@/lib/actions/clients";
+import { DeleteClientButton } from "@/components/clients/delete-client-button";
+import { updateClient } from "@/lib/actions/clients";
 import { getClient } from "@/lib/queries/clients";
-import { Button } from "@/components/ui/button";
 
 export default async function EditClientPage({
   params,
@@ -15,7 +15,6 @@ export default async function EditClientPage({
   if (!client) notFound();
 
   const boundUpdate = updateClient.bind(null, id);
-  const boundDelete = deleteClient.bind(null, id);
 
   return (
     <>
@@ -25,14 +24,12 @@ export default async function EditClientPage({
         initial={client}
         submitLabel="Save changes"
       />
-      <form action={boundDelete} className="px-4 pb-8">
-        <Button type="submit" variant="destructive" className="w-full">
-          Delete client
-        </Button>
+      <div className="px-4 pb-8">
+        <DeleteClientButton clientId={id} clientName={client.name} />
         <p className="mt-2 text-center text-xs text-text-tertiary">
           Deletes all of this client&apos;s data. Cannot be undone.
         </p>
-      </form>
+      </div>
     </>
   );
 }
