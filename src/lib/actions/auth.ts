@@ -25,6 +25,9 @@ export async function login(
       error: "Login isn't configured. Set the AUTH_* environment variables.",
     };
   }
+  if (email.length > 320 || password.length > 200) {
+    return { error: "Incorrect email or password." };
+  }
   if (!credentialsValid(email, password)) {
     return { error: "Incorrect email or password." };
   }
