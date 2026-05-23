@@ -32,44 +32,44 @@ export async function listClients() {
 
   const ids = rows.map((r) => r.id);
 
-  const lastWorkouts = await db
-    .select({
-      clientId: workouts.clientId,
-      lastWorkoutOn: sql<string | null>`max(${workouts.performedOn})`,
-    })
-    .from(workouts)
-    .where(inArray(workouts.clientId, ids))
-    .groupBy(workouts.clientId);
-
-  const nextSessions = await db
-    .select({
-      clientId: sessions.clientId,
-      nextSessionAt: sql<Date | null>`min(${sessions.startsAt})`,
-    })
-    .from(sessions)
-    .where(
-      and(
-        inArray(sessions.clientId, ids),
-        gte(sessions.startsAt, new Date()),
-        eq(sessions.status, "scheduled"),
-      ),
-    )
-    .groupBy(sessions.clientId);
-
-  const openActions = await db
-    .select({
-      clientId: clientMessages.clientId,
-      count: sql<number>`count(*)::int`,
-    })
-    .from(clientMessages)
-    .where(
-      and(
-        inArray(clientMessages.clientId, ids),
-        eq(clientMessages.actionDone, false),
-        sql`${clientMessages.actionItem} is not null`,
-      ),
-    )
-    .groupBy(clientMessages.clientId);
+  const [lastWorkouts, nextSessions, openActions] = await Promise.all([
+    db
+      .select({
+        clientId: workouts.clientId,
+        lastWorkoutOn: sql<string | null>`max(${workouts.performedOn})`,
+      })
+      .from(workouts)
+      .where(inArray(workouts.clientId, ids))
+      .groupBy(workouts.clientId),
+    db
+      .select({
+        clientId: sessions.clientId,
+        nextSessionAt: sql<Date | null>`min(${sessions.startsAt})`,
+      })
+      .from(sessions)
+      .where(
+        and(
+          inArray(sessions.clientId, ids),
+          gte(sessions.startsAt, new Date()),
+          eq(sessions.status, "scheduled"),
+        ),
+      )
+      .groupBy(sessions.clientId),
+    db
+      .select({
+        clientId: clientMessages.clientId,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(clientMessages)
+      .where(
+        and(
+          inArray(clientMessages.clientId, ids),
+          eq(clientMessages.actionDone, false),
+          sql`${clientMessages.actionItem} is not null`,
+        ),
+      )
+      .groupBy(clientMessages.clientId),
+  ]);
 
   const lastMap = new Map(lastWorkouts.map((r) => [r.clientId, r.lastWorkoutOn]));
   const nextMap = new Map(nextSessions.map((r) => [r.clientId, r.nextSessionAt]));
@@ -99,82 +99,90 @@ export async function getClientDetail(id: string) {
     .orderBy(desc(bodyStats.weekStart))
     .limit(1);
 
-  const [prevStatsRow] = await db
-    .select()
-    .from(bodyStats)
-    .where(
-      and(
-        eq(bodyStats.clientId, id),
-        statsRow
-          ? sql`${bodyStats.weekStart} < ${statsRow.weekStart}`
-          : sql`true`,
+  const [
+    prevStatsRows,
+    goalRows,
+    upcomingSessions,
+    latestNutrition,
+    recentWorkouts,
+    waiverRows,
+    recentMessages,
+    openActionRows,
+  ] = await Promise.all([
+    db
+      .select()
+      .from(bodyStats)
+      .where(
+        and(
+          eq(bodyStats.clientId, id),
+          statsRow
+            ? sql`${bodyStats.weekStart} < ${statsRow.weekStart}`
+            : sql`true`,
+        ),
+      )
+      .orderBy(desc(bodyStats.weekStart))
+      .limit(1),
+    db
+      .select()
+      .from(goals)
+      .where(eq(goals.clientId, id))
+      .orderBy(goals.done, desc(goals.createdAt))
+      .limit(5),
+    db
+      .select()
+      .from(sessions)
+      .where(
+        and(
+          eq(sessions.clientId, id),
+          gte(sessions.startsAt, new Date()),
+          eq(sessions.status, "scheduled"),
+        ),
+      )
+      .orderBy(sessions.startsAt)
+      .limit(3),
+    db
+      .select()
+      .from(nutritionNotes)
+      .where(eq(nutritionNotes.clientId, id))
+      .orderBy(desc(nutritionNotes.noteDate), desc(nutritionNotes.createdAt))
+      .limit(2),
+    db
+      .select()
+      .from(workouts)
+      .where(eq(workouts.clientId, id))
+      .orderBy(desc(workouts.performedOn))
+      .limit(3),
+    db
+      .select({
+        waiverVersion: clientIntake.waiverVersion,
+        waiverAcceptedAt: clientIntake.waiverAcceptedAt,
+      })
+      .from(clientIntake)
+      .where(eq(clientIntake.clientId, id))
+      .limit(1),
+    db
+      .select()
+      .from(clientMessages)
+      .where(eq(clientMessages.clientId, id))
+      .orderBy(desc(clientMessages.occurredAt))
+      .limit(2),
+    db
+      .select({
+        count: sql<number>`count(*)::int`,
+      })
+      .from(clientMessages)
+      .where(
+        and(
+          eq(clientMessages.clientId, id),
+          eq(clientMessages.actionDone, false),
+          sql`${clientMessages.actionItem} is not null`,
+        ),
       ),
-    )
-    .orderBy(desc(bodyStats.weekStart))
-    .limit(1);
+  ]);
 
-  const goalRows = await db
-    .select()
-    .from(goals)
-    .where(eq(goals.clientId, id))
-    .orderBy(goals.done, desc(goals.createdAt))
-    .limit(5);
-
-  const upcomingSessions = await db
-    .select()
-    .from(sessions)
-    .where(
-      and(
-        eq(sessions.clientId, id),
-        gte(sessions.startsAt, new Date()),
-        eq(sessions.status, "scheduled"),
-      ),
-    )
-    .orderBy(sessions.startsAt)
-    .limit(3);
-
-  const latestNutrition = await db
-    .select()
-    .from(nutritionNotes)
-    .where(eq(nutritionNotes.clientId, id))
-    .orderBy(desc(nutritionNotes.noteDate), desc(nutritionNotes.createdAt))
-    .limit(2);
-
-  const recentWorkouts = await db
-    .select()
-    .from(workouts)
-    .where(eq(workouts.clientId, id))
-    .orderBy(desc(workouts.performedOn))
-    .limit(3);
-
-  const [waiverRow] = await db
-    .select({
-      waiverVersion: clientIntake.waiverVersion,
-      waiverAcceptedAt: clientIntake.waiverAcceptedAt,
-    })
-    .from(clientIntake)
-    .where(eq(clientIntake.clientId, id))
-    .limit(1);
-
-  const recentMessages = await db
-    .select()
-    .from(clientMessages)
-    .where(eq(clientMessages.clientId, id))
-    .orderBy(desc(clientMessages.occurredAt))
-    .limit(2);
-
-  const [openActionRow] = await db
-    .select({
-      count: sql<number>`count(*)::int`,
-    })
-    .from(clientMessages)
-    .where(
-      and(
-        eq(clientMessages.clientId, id),
-        eq(clientMessages.actionDone, false),
-        sql`${clientMessages.actionItem} is not null`,
-      ),
-    );
+  const prevStatsRow = prevStatsRows[0];
+  const waiverRow = waiverRows[0];
+  const openActionRow = openActionRows[0];
 
   return {
     client,
