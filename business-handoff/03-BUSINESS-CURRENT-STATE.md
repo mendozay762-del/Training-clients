@@ -4,8 +4,6 @@ This is the honest snapshot of the business as it exists **right now.** No proje
 
 ## The operator
 - A **solo personal trainer.** No employees, no co-trainers, no assistant.
-- **Based in Texas. Running this as a side hustle, with intent to scale up modestly.**
-- **No certification and no license**, and choosing to **operate uncertified for now** (legal to operate in TX, but see constraints below and Document 06).
 - Runs all functions personally: sales, onboarding, programming, coaching, admin, and (so far) building their own software.
 - Possesses real programming knowledge (hypertrophy/strength, SMART goal-setting, NASM-style assessment concepts) and has built a working coaching system.
 
@@ -26,9 +24,8 @@ This is the honest snapshot of the business as it exists **right now.** No proje
 - **A liability/risk framework:** medical/PAR-Q screening and a versioned waiver.
 
 ## Constraints & gaps (what's missing)
-- **No certification → likely no liability insurance, and commercial gyms generally won't allow paid coaching on their floors.** This constrains the in-person/gym path; **online/remote is the viable lane now.** (See Document 06 — this is a major strategic constraint.)
 - **No pricing** has been set for any offer.
-- **Payments planned via cash / Zelle** (no card processor) — workable to start; all income is still taxable and should be recorded.
+- **No payment/billing system** — money would currently be collected manually (e.g., a payment link or app like Venmo/Zelle/Stripe link).
 - **No marketing presence or brand** — no business social accounts, website, or content yet. Any social activity would start on the trainer's **personal** accounts.
 - **No social proof** — one client, no testimonials, no published before/after results, no reviews.
 - **No client-facing software** — clients can't use the app; "self-run" = a document.

@@ -32,18 +32,13 @@ Produce **concrete, do-it-now strategies** to start generating clients and reven
 - **Solo operator** — live training is time-capped; factor scalability into the offer mix.
 - Prefer **free/low-cost, high-leverage** tactics suitable for a beginner with limited time and budget.
 
-## Already known (from the handoff — don't re-ask)
-- **Location:** Texas. **Side hustle**, with intent to scale modestly.
-- **No certification or insurance**; operating uncertified for now → **online/remote is the viable primary lane**, commercial-gym coaching is constrained (see Doc 06).
-- **Payments:** cash / Zelle.
-
-## Still open — the assistant should ask early
-- City/region within Texas, and willingness to coach **fully remote** vs local.
+## Open questions the assistant should ask the trainer early
+- Location/market, and in-person radius vs willingness to coach remotely.
 - Hours per week available for clients, and target income.
 - Any budget for ads/tools, or strictly organic to start.
 - Preferred niche or client type (and the trainer's own physique/story as a marketing asset).
-- Current personal social following/size and which platforms; comfort being on camera / posting publicly.
-- Whether they'd consider getting **one accredited cert** soon (it unlocks gyms + insurance and widens what's sellable).
+- Current personal social following/size and which platforms.
+- Comfort level being on camera / posting publicly.
 
 ## Desired output style
 - **Actionable and specific** (steps, numbers, scripts, example posts) — not generic advice.
