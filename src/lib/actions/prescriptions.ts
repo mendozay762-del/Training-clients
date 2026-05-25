@@ -9,6 +9,7 @@ import {
   prescribedWorkouts,
   trainingBlocks,
   workoutExercises,
+  workoutSets,
   workouts,
 } from "@/db/schema";
 import {
@@ -385,14 +386,32 @@ export async function startSessionFromPrescription(
   if (!workout) throw new Error("Failed to start session");
 
   if (exercises.length > 0) {
-    await db.insert(workoutExercises).values(
-      exercises.map((ex, i) => ({
-        workoutId: workout.id,
-        exerciseName: ex.exerciseName,
-        position: i + 1,
-        notes: ex.notes,
-      })),
-    );
+    const createdExercises = await db
+      .insert(workoutExercises)
+      .values(
+        exercises.map((ex, i) => ({
+          workoutId: workout.id,
+          exerciseName: ex.exerciseName,
+          position: i + 1,
+          notes: ex.notes,
+        })),
+      )
+      .returning({ id: workoutExercises.id });
+
+    // Pre-create the prescribed number of empty set rows per exercise so the
+    // logged session opens ready to fill in (reps/weight left blank).
+    const setRows = createdExercises.flatMap((created, i) => {
+      const count = exercises[i]?.sets ?? 0;
+      return Array.from({ length: count }, (_, s) => ({
+        exerciseId: created.id,
+        setIndex: s + 1,
+        reps: 0,
+      }));
+    });
+
+    if (setRows.length > 0) {
+      await db.insert(workoutSets).values(setRows);
+    }
   }
 
   await db
