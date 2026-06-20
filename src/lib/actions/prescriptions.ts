@@ -6,6 +6,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import {
   prescribedExercises,
+  prescribedSets,
   prescribedWorkouts,
   trainingBlocks,
   workoutExercises,
@@ -228,9 +229,11 @@ export async function importFromSheet(
     if (!created) continue;
     workoutsCreated += 1;
 
-    if (group.exercises.length > 0) {
-      await db.insert(prescribedExercises).values(
-        group.exercises.map((ex, i) => ({
+    for (let i = 0; i < group.exercises.length; i++) {
+      const ex = group.exercises[i];
+      const [createdExercise] = await db
+        .insert(prescribedExercises)
+        .values({
           prescribedWorkoutId: created.id,
           exerciseName: ex.exerciseName,
           orderIndex: i + 1,
@@ -243,10 +246,28 @@ export async function importFromSheet(
           loadText: ex.loadText,
           rpeTarget: numToString(ex.rpeTarget),
           rirTarget: ex.rirTarget,
+          rirLow: ex.rirLow,
+          rirHigh: ex.rirHigh,
           notes: ex.notes,
-        })),
-      );
-      exercisesCreated += group.exercises.length;
+        })
+        .returning({ id: prescribedExercises.id });
+      if (!createdExercise) continue;
+      exercisesCreated += 1;
+
+      // Per-set targets so each set can carry its own rep/RIR range.
+      if (ex.perSet && ex.perSet.length > 0) {
+        await db.insert(prescribedSets).values(
+          ex.perSet.map((s) => ({
+            prescribedExerciseId: createdExercise.id,
+            setIndex: s.setIndex,
+            repsLow: s.repsLow,
+            repsHigh: s.repsHigh,
+            repsText: s.repsText,
+            rirLow: s.rirLow,
+            rirHigh: s.rirHigh,
+          })),
+        );
+      }
     }
   }
 

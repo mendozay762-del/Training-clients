@@ -1,3 +1,12 @@
+export type PrescribedSetSpec = {
+  setIndex: number;
+  repsLow: number | null;
+  repsHigh: number | null;
+  repsText: string | null;
+  rirLow: number | null;
+  rirHigh: number | null;
+};
+
 export type SheetRow = {
   line: number;
   prescribedFor: string;
@@ -12,6 +21,11 @@ export type SheetRow = {
   loadText: string | null;
   rpeTarget: number | null;
   rirTarget: number | null;
+  rirLow: number | null;
+  rirHigh: number | null;
+  // Per-set detail when reps/RIR vary across sets (e.g. "1-2 | 1-2 | 0-1").
+  // Always populated when a set count is known so each set carries a target.
+  perSet: PrescribedSetSpec[] | null;
   notes: string | null;
 };
 
@@ -145,16 +159,19 @@ function parseDataRow(
   if (sets.error)
     errors.push({ line, column: "sets", message: sets.error, raw: sets.raw });
 
-  const reps = parseReps(cell(cells, map, "reps"));
   const load = parseLoad(cell(cells, map, "load"));
 
   const rpe = parseDecimalCell(cell(cells, map, "rpe"), 1, 10);
   if (rpe.error)
     errors.push({ line, column: "rpe", message: rpe.error, raw: rpe.raw });
 
-  const rir = parseIntCell(cell(cells, map, "rir"), 0, 20);
-  if (rir.error)
-    errors.push({ line, column: "rir", message: rir.error, raw: rir.raw });
+  const prescription = parsePerSet(
+    cell(cells, map, "reps"),
+    cell(cells, map, "rir"),
+    sets.value,
+    line,
+    errors,
+  );
 
   return {
     line,
@@ -162,16 +179,143 @@ function parseDataRow(
     workoutName: cell(cells, map, "workout_name") || null,
     exerciseName,
     sets: sets.value,
-    repsLow: reps.low,
-    repsHigh: reps.high,
-    repsText: reps.text,
+    repsLow: prescription.repsLow,
+    repsHigh: prescription.repsHigh,
+    repsText: prescription.repsText,
     loadLbs: load.lbs,
     loadPct1rm: load.pct,
     loadText: load.text,
     rpeTarget: rpe.value,
-    rirTarget: rir.value,
+    rirTarget: prescription.rirTarget,
+    rirLow: prescription.rirLow,
+    rirHigh: prescription.rirHigh,
+    perSet: prescription.perSet,
     notes: cell(cells, map, "notes") || null,
   };
+}
+
+// Splits a cell into per-set tokens on "|". A single token applies to all
+// sets; N tokens map to sets 1..N in order.
+function splitPerSet(raw: string): string[] {
+  return raw
+    .split("|")
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0);
+}
+
+type RirToken = { low: number | null; high: number | null; error: string | null };
+function parseRirToken(raw: string): RirToken {
+  const range = raw.match(/^(\d+)\s*[-–]\s*(\d+)$/);
+  if (range) {
+    let lo = Number.parseInt(range[1], 10);
+    let hi = Number.parseInt(range[2], 10);
+    if (lo > hi) [lo, hi] = [hi, lo];
+    if (hi > 20)
+      return { low: null, high: null, error: `RIR "${raw}" is too high (max 20).` };
+    return { low: lo, high: hi, error: null };
+  }
+  const single = raw.match(/^(\d+)$/);
+  if (single) {
+    const n = Number.parseInt(single[1], 10);
+    if (n > 20)
+      return { low: null, high: null, error: `RIR "${raw}" is too high (max 20).` };
+    return { low: n, high: n, error: null };
+  }
+  return {
+    low: null,
+    high: null,
+    error: `"${raw}" is not a valid RIR (use e.g. 2 or 0-1).`,
+  };
+}
+
+type PerSetResult = {
+  repsLow: number | null;
+  repsHigh: number | null;
+  repsText: string | null;
+  rirLow: number | null;
+  rirHigh: number | null;
+  rirTarget: number | null;
+  perSet: PrescribedSetSpec[] | null;
+};
+
+function parsePerSet(
+  repsRaw: string,
+  rirRaw: string,
+  setsValue: number | null,
+  line: number,
+  errors: SheetParseError[],
+): PerSetResult {
+  const repsTokens = splitPerSet(repsRaw).map(parseReps);
+  const rirTokens = splitPerSet(rirRaw).map(parseRirToken);
+  for (const r of rirTokens)
+    if (r.error) errors.push({ line, column: "rir", message: r.error, raw: rirRaw });
+
+  // How many sets does this prescription describe?
+  const tokenMax = Math.max(repsTokens.length, rirTokens.length);
+  const setCount = setsValue ?? (tokenMax > 0 ? tokenMax : null);
+
+  // A multi-value cell must match the set count exactly (single value broadcasts).
+  if (setCount !== null) {
+    if (repsTokens.length > 1 && repsTokens.length !== setCount)
+      errors.push({
+        line,
+        column: "reps",
+        message: `Expected ${setCount} reps value(s) — one per set — but found ${repsTokens.length}. Use one value for all sets, or one per set separated by "|".`,
+        raw: repsRaw,
+      });
+    if (rirTokens.length > 1 && rirTokens.length !== setCount)
+      errors.push({
+        line,
+        column: "rir",
+        message: `Expected ${setCount} RIR value(s) — one per set — but found ${rirTokens.length}. Use one value for all sets, or one per set separated by "|".`,
+        raw: rirRaw,
+      });
+  }
+
+  // Exercise-level summary (envelope across sets), used on the program overview.
+  const numericReps = repsTokens.filter((t) => t.low !== null);
+  const repsLow = numericReps.length
+    ? Math.min(...numericReps.map((t) => t.low as number))
+    : null;
+  const repsHigh = numericReps.length
+    ? Math.max(...numericReps.map((t) => t.high as number))
+    : null;
+  const repsText = repsTokens.find((t) => t.text !== null)?.text ?? null;
+
+  const validRir = rirTokens.filter((r) => r.error === null && r.low !== null);
+  const rirLow = validRir.length
+    ? Math.min(...validRir.map((r) => r.low as number))
+    : null;
+  const rirHigh = validRir.length
+    ? Math.max(...validRir.map((r) => r.high as number))
+    : null;
+  // Keep the legacy single-int target only when one plain value was given.
+  const rirTarget =
+    rirTokens.length === 1 &&
+    validRir.length === 1 &&
+    validRir[0].low === validRir[0].high
+      ? validRir[0].low
+      : null;
+
+  // Build the per-set rows so every set carries its own target.
+  let perSet: PrescribedSetSpec[] | null = null;
+  if (setCount !== null && setCount > 0 && (repsTokens.length > 0 || validRir.length > 0)) {
+    perSet = [];
+    for (let i = 0; i < setCount; i++) {
+      const rep = repsTokens.length === 1 ? repsTokens[0] : repsTokens[i];
+      const rir = rirTokens.length === 1 ? rirTokens[0] : rirTokens[i];
+      perSet.push({
+        setIndex: i + 1,
+        repsLow: rep?.low ?? null,
+        repsHigh: rep?.high ?? null,
+        repsText: rep?.text ?? null,
+        rirLow: rir && rir.error === null ? rir.low : null,
+        rirHigh: rir && rir.error === null ? rir.high : null,
+      });
+    }
+  }
+
+  return { repsLow, repsHigh, repsText, rirLow, rirHigh, rirTarget, perSet };
 }
 
 function parseDate(raw: string): string | null {

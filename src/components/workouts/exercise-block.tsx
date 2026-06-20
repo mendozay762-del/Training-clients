@@ -17,7 +17,10 @@ interface Props {
       weightLbs: string | null;
       rpe: string | null;
       rir: number | null;
+      notes: string | null;
       isWarmup: boolean;
+      suggestedReps: string | null;
+      suggestedRir: string | null;
     }>;
   };
   workoutId: string;
@@ -82,8 +85,11 @@ export function ExerciseBlock({ exercise, workoutId, clientId }: Props) {
                 weightLbs: s.weightLbs,
                 rpe: s.rpe,
                 rir: s.rir,
+                notes: s.notes,
                 isWarmup: s.isWarmup,
               }}
+              suggestedReps={s.suggestedReps}
+              suggestedRir={s.suggestedRir}
             />
           ))
         )}

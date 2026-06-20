@@ -101,6 +101,7 @@ export async function addSet(formData: FormData) {
     weightLbs: parseOpt(formData.get("weightLbs")),
     rpe: parseOpt(formData.get("rpe")),
     rir: parseOpt(formData.get("rir")),
+    notes: parseNotes(formData.get("notes")),
     isWarmup: formData.get("isWarmup") === "true",
   });
 
@@ -118,6 +119,7 @@ export async function addSet(formData: FormData) {
     weightLbs: numericOrNull(payload.weightLbs),
     rpe: numericOrNull(payload.rpe),
     rir: payload.rir ?? null,
+    notes: payload.notes ?? null,
     isWarmup: payload.isWarmup,
   });
 
@@ -133,6 +135,7 @@ export async function updateSet(formData: FormData) {
     weightLbs: parseOpt(formData.get("weightLbs")),
     rpe: parseOpt(formData.get("rpe")),
     rir: parseOpt(formData.get("rir")),
+    notes: parseNotes(formData.get("notes")),
     isWarmup: formData.get("isWarmup") === "true",
   });
 
@@ -143,6 +146,7 @@ export async function updateSet(formData: FormData) {
       weightLbs: numericOrNull(payload.weightLbs),
       rpe: numericOrNull(payload.rpe),
       rir: payload.rir ?? null,
+      notes: payload.notes ?? null,
       isWarmup: payload.isWarmup,
     })
     .where(eq(workoutSets.id, setId));
@@ -242,6 +246,12 @@ function parseOpt(raw: FormDataEntryValue | null): number | undefined {
   const n = Number(s);
   if (Number.isNaN(n)) return undefined;
   return n;
+}
+
+function parseNotes(raw: FormDataEntryValue | null): string | undefined {
+  if (raw === null) return undefined;
+  const s = String(raw).trim();
+  return s === "" ? undefined : s;
 }
 
 async function revalidateForExercise(exerciseId: string) {

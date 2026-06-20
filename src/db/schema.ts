@@ -96,6 +96,7 @@ export const workoutSets = pgTable(
     weightLbs: numeric("weight_lbs", { precision: 6, scale: 2 }),
     rpe: numeric("rpe", { precision: 3, scale: 1 }),
     rir: integer("rir"),
+    notes: text("notes"),
     isWarmup: boolean("is_warmup").notNull().default(false),
   },
   (t) => ({
@@ -398,12 +399,40 @@ export const prescribedExercises = pgTable(
     loadText: text("load_text"),
     rpeTarget: numeric("rpe_target", { precision: 3, scale: 1 }),
     rirTarget: integer("rir_target"),
+    rirLow: integer("rir_low"),
+    rirHigh: integer("rir_high"),
     notes: text("notes"),
   },
   (t) => ({
     uniqueOrder: unique("prescribed_exercises_order_uniq").on(
       t.prescribedWorkoutId,
       t.orderIndex,
+    ),
+  }),
+);
+
+// Per-set prescription detail. One row per prescribed set, so a single
+// exercise can carry different rep/RIR targets per set (e.g. sets 1–2 at
+// RIR 1–2, set 3 at RIR 0–1). When absent for a set, the exercise-level
+// targets on prescribed_exercises apply.
+export const prescribedSets = pgTable(
+  "prescribed_sets",
+  {
+    id,
+    prescribedExerciseId: uuid("prescribed_exercise_id")
+      .notNull()
+      .references(() => prescribedExercises.id, { onDelete: "cascade" }),
+    setIndex: integer("set_index").notNull(),
+    repsLow: integer("reps_low"),
+    repsHigh: integer("reps_high"),
+    repsText: text("reps_text"),
+    rirLow: integer("rir_low"),
+    rirHigh: integer("rir_high"),
+  },
+  (t) => ({
+    uniqueSet: unique("prescribed_sets_set_uniq").on(
+      t.prescribedExerciseId,
+      t.setIndex,
     ),
   }),
 );
@@ -444,3 +473,5 @@ export type PrescribedWorkout = typeof prescribedWorkouts.$inferSelect;
 export type NewPrescribedWorkout = typeof prescribedWorkouts.$inferInsert;
 export type PrescribedExercise = typeof prescribedExercises.$inferSelect;
 export type NewPrescribedExercise = typeof prescribedExercises.$inferInsert;
+export type PrescribedSet = typeof prescribedSets.$inferSelect;
+export type NewPrescribedSet = typeof prescribedSets.$inferInsert;

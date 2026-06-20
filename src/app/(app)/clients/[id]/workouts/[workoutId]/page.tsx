@@ -52,7 +52,10 @@ export default async function WorkoutDetailPage({
                 weightLbs: s.weightLbs,
                 rpe: s.rpe,
                 rir: s.rir,
+                notes: s.notes,
                 isWarmup: s.isWarmup,
+                suggestedReps: s.suggestedReps,
+                suggestedRir: s.suggestedRir,
               })),
             }}
             workoutId={workoutId}

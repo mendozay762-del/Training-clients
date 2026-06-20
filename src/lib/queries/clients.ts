@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { todayInAppTz } from "@/lib/utils";
+import { formatRepsRange, formatRirRange } from "@/lib/prescription-format";
 import {
   clients,
   clientIntake,
@@ -15,7 +16,9 @@ import {
   trainingBlocks,
   prescribedWorkouts,
   prescribedExercises,
+  prescribedSets,
 } from "@/db/schema";
+import type { PrescribedExercise, PrescribedSet } from "@/db/schema";
 
 export async function listClients() {
   const rows = await db
@@ -276,12 +279,80 @@ export async function getWorkoutDetail(workoutId: string) {
         .orderBy(asc(workoutSets.setIndex))
     : [];
 
+  // If this session was started from a prescription, load the planned
+  // targets so each set can show its suggested rep range and RIR.
+  const [prescription] = await db
+    .select({ id: prescribedWorkouts.id })
+    .from(prescribedWorkouts)
+    .where(eq(prescribedWorkouts.actualWorkoutId, workoutId))
+    .limit(1);
+
+  let pExercises: PrescribedExercise[] = [];
+  let pSets: PrescribedSet[] = [];
+  if (prescription) {
+    pExercises = await db
+      .select()
+      .from(prescribedExercises)
+      .where(eq(prescribedExercises.prescribedWorkoutId, prescription.id))
+      .orderBy(asc(prescribedExercises.orderIndex));
+    const peIds = pExercises.map((e) => e.id);
+    pSets = peIds.length
+      ? await db
+          .select()
+          .from(prescribedSets)
+          .where(inArray(prescribedSets.prescribedExerciseId, peIds))
+      : [];
+  }
+
+  const norm = (s: string) => s.trim().toLowerCase();
+  const peByOrder = new Map<number, PrescribedExercise>();
+  const peByName = new Map<string, PrescribedExercise>();
+  for (const pe of pExercises) {
+    peByOrder.set(pe.orderIndex, pe);
+    if (!peByName.has(norm(pe.exerciseName))) peByName.set(norm(pe.exerciseName), pe);
+  }
+  const psByKey = new Map<string, PrescribedSet>();
+  for (const ps of pSets) {
+    psByKey.set(`${ps.prescribedExerciseId}:${ps.setIndex}`, ps);
+  }
+
+  // Sessions are created in prescribed order, so position usually equals
+  // orderIndex; fall back to name match so it survives reordering.
+  function matchExercise(
+    name: string,
+    position: number,
+  ): PrescribedExercise | null {
+    const byOrder = peByOrder.get(position);
+    if (byOrder && norm(byOrder.exerciseName) === norm(name)) return byOrder;
+    return peByName.get(norm(name)) ?? byOrder ?? null;
+  }
+
+  function suggestion(pe: PrescribedExercise | null, setIndex: number) {
+    if (!pe) return { suggestedReps: null, suggestedRir: null };
+    const ps = psByKey.get(`${pe.id}:${setIndex}`);
+    if (ps) {
+      return {
+        suggestedReps: formatRepsRange(ps.repsLow, ps.repsHigh, ps.repsText),
+        suggestedRir: formatRirRange(ps.rirLow, ps.rirHigh),
+      };
+    }
+    return {
+      suggestedReps: formatRepsRange(pe.repsLow, pe.repsHigh, pe.repsText),
+      suggestedRir: formatRirRange(pe.rirLow, pe.rirHigh),
+    };
+  }
+
   return {
     workout,
-    exercises: exercises.map((ex) => ({
-      ...ex,
-      sets: sets.filter((s) => s.exerciseId === ex.id),
-    })),
+    exercises: exercises.map((ex) => {
+      const pe = matchExercise(ex.exerciseName, ex.position);
+      return {
+        ...ex,
+        sets: sets
+          .filter((s) => s.exerciseId === ex.id)
+          .map((s) => ({ ...s, ...suggestion(pe, s.setIndex) })),
+      };
+    }),
   };
 }
 

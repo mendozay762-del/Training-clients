@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Flame, Trash2 } from "lucide-react";
+import { Flame, StickyNote, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { deleteSet, updateSet } from "@/lib/actions/workouts";
 import { epleyOneRm } from "@/lib/schemas/workouts";
@@ -11,6 +11,7 @@ type SetState = {
   weightLbs: string;
   rpe: string;
   rir: string;
+  notes: string;
   isWarmup: boolean;
 };
 
@@ -26,6 +27,7 @@ function buildFormData(setId: string, s: SetState): FormData {
   fd.set("weightLbs", s.weightLbs);
   fd.set("rpe", s.rpe);
   fd.set("rir", s.rir);
+  fd.set("notes", s.notes);
   fd.set("isWarmup", s.isWarmup ? "true" : "false");
   return fd;
 }
@@ -38,19 +40,31 @@ interface Props {
     weightLbs: string | null;
     rpe: string | null;
     rir: number | null;
+    notes: string | null;
     isWarmup: boolean;
   };
+  // Prescribed targets for this set, shown as a faint hint above the box.
+  suggestedReps?: string | null;
+  suggestedRir?: string | null;
 }
 
-export function SetRow({ id, setIndex, initial }: Props) {
+export function SetRow({
+  id,
+  setIndex,
+  initial,
+  suggestedReps,
+  suggestedRir,
+}: Props) {
   const [state, setState] = useState<SetState>({
     reps: toStr(initial.reps),
     weightLbs: toStr(initial.weightLbs),
     rpe: toStr(initial.rpe),
     rir: toStr(initial.rir),
+    notes: initial.notes ?? "",
     isWarmup: initial.isWarmup,
   });
   const [isPending, startTransition] = useTransition();
+  const [notesOpen, setNotesOpen] = useState(false);
 
   const repsNum = state.reps === "" ? null : Number(state.reps);
   const weightNum = state.weightLbs === "" ? null : Number(state.weightLbs);
@@ -101,32 +115,30 @@ export function SetRow({ id, setIndex, initial }: Props) {
       </button>
 
       <CellInput
-        label="reps"
-        value={state.reps}
-        type="number"
-        onChange={(v) => setState({ ...state, reps: v })}
-        onCommit={(v) => commit({ ...state, reps: v })}
-      />
-      <CellInput
         label="lb"
         value={state.weightLbs}
-        type="number"
         onChange={(v) => setState({ ...state, weightLbs: v })}
         onCommit={(v) => commit({ ...state, weightLbs: v })}
         step="2.5"
       />
       <CellInput
+        label="reps"
+        hint={state.isWarmup ? null : suggestedReps}
+        value={state.reps}
+        onChange={(v) => setState({ ...state, reps: v })}
+        onCommit={(v) => commit({ ...state, reps: v })}
+      />
+      <CellInput
         label="RPE"
         value={state.rpe}
-        type="number"
         onChange={(v) => setState({ ...state, rpe: v })}
         onCommit={(v) => commit({ ...state, rpe: v })}
         step="0.5"
       />
       <CellInput
         label="RIR"
+        hint={state.isWarmup ? null : suggestedRir}
         value={state.rir}
-        type="number"
         onChange={(v) => setState({ ...state, rir: v })}
         onCommit={(v) => commit({ ...state, rir: v })}
       />
@@ -141,11 +153,44 @@ export function SetRow({ id, setIndex, initial }: Props) {
         <Trash2 className="h-4 w-4" />
       </button>
 
-      {e1rm !== null && (
-        <div className="col-span-6 -mt-1 pl-8 text-[11px] text-text-tertiary tabnums">
-          ≈ {e1rm.toFixed(0)} lb 1RM
-        </div>
-      )}
+      <div className="col-span-6 flex flex-col gap-1 pl-8">
+        {e1rm !== null && (
+          <div className="text-[11px] text-text-tertiary tabnums">
+            ≈ {e1rm.toFixed(0)} lb 1RM
+          </div>
+        )}
+
+        {notesOpen ? (
+          <textarea
+            autoFocus
+            rows={2}
+            value={state.notes}
+            placeholder="Form cues, reminders for this set…"
+            onChange={(e) => setState({ ...state, notes: e.target.value })}
+            onBlur={(e) => {
+              setNotesOpen(false);
+              commit({ ...state, notes: e.target.value });
+            }}
+            className="w-full resize-y rounded-btn border border-border-subtle/30 bg-card-hover/40 px-2 py-1.5 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none"
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setNotesOpen(true)}
+            className={cn(
+              "flex items-center gap-1 self-start text-left text-[11px]",
+              state.notes
+                ? "text-text-secondary"
+                : "text-text-tertiary hover:text-text-secondary",
+            )}
+          >
+            <StickyNote className="h-3 w-3 shrink-0" />
+            <span className="truncate">
+              {state.notes ? state.notes : "Add note"}
+            </span>
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -153,19 +198,19 @@ export function SetRow({ id, setIndex, initial }: Props) {
 interface CellInputProps {
   label: string;
   value: string;
-  type: "number" | "text";
   onChange: (v: string) => void;
   onCommit: (v: string) => void;
   step?: string;
+  hint?: string | null;
 }
 
 function CellInput({
   label,
   value,
-  type,
   onChange,
   onCommit,
   step,
+  hint,
 }: CellInputProps) {
   const [focused, setFocused] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -178,11 +223,19 @@ function CellInput({
 
   return (
     <label className="flex flex-col">
-      <span className="text-[10px] uppercase tracking-wider text-text-tertiary">
-        {label}
+      <span className="flex items-baseline justify-between gap-1 text-[10px] uppercase tracking-wider text-text-tertiary">
+        <span>{label}</span>
+        {hint ? (
+          <span
+            className="font-semibold normal-case tabnums text-text-tertiary/50"
+            title={`Target ${label}: ${hint}`}
+          >
+            {hint}
+          </span>
+        ) : null}
       </span>
       <input
-        type={type}
+        type="number"
         inputMode="decimal"
         step={step}
         value={focused ? draft : value}

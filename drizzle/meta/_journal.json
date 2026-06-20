@@ -57,6 +57,13 @@
       "when": 1779502942440,
       "tag": "0007_overjoyed_rumiko_fujikawa",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1781993738646,
+      "tag": "0008_complete_the_fallen",
+      "breakpoints": true
     }
   ]
 }

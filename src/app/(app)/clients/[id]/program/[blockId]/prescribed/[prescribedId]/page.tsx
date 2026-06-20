@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/nav/page-header";
 import { PrescribedActions } from "@/components/program/prescribed-actions";
 import { PrescribedWorkoutForm } from "@/components/program/prescribed-workout-form";
 import { getPrescribedWorkoutDetail } from "@/lib/queries/clients";
+import { formatRirRange } from "@/lib/prescription-format";
 
 export const dynamic = "force-dynamic";
 
@@ -105,8 +106,12 @@ export default async function PrescribedWorkoutPage({
                       Load: {formatLoad(ex.loadLbs, ex.loadPct1rm, ex.loadText)}
                     </span>
                     {ex.rpeTarget && <span>· RPE {Number(ex.rpeTarget)}</span>}
-                    {ex.rirTarget !== null && (
-                      <span>· RIR {ex.rirTarget}</span>
+                    {(formatRirRange(ex.rirLow, ex.rirHigh) ??
+                      (ex.rirTarget !== null ? String(ex.rirTarget) : null)) && (
+                      <span>
+                        · RIR{" "}
+                        {formatRirRange(ex.rirLow, ex.rirHigh) ?? ex.rirTarget}
+                      </span>
                     )}
                   </div>
                   {ex.notes && (

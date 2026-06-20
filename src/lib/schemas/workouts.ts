@@ -31,6 +31,7 @@ export const setPayloadSchema = z.object({
   weightLbs: optNum,
   rpe: optNum,
   rir: optInt,
+  notes: z.string().trim().max(1000).optional(),
   isWarmup: z.boolean().default(false),
 });
 
