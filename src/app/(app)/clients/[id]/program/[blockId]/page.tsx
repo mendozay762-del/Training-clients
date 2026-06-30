@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Pencil } from "lucide-react";
 import { PageHeader } from "@/components/nav/page-header";
 import { SheetImportForm } from "@/components/program/sheet-import-form";
+import { WeekActions } from "@/components/program/week-actions";
 import { getBlockDetail } from "@/lib/queries/clients";
 import {
   BLOCK_STYLE_LABELS,
@@ -85,6 +86,16 @@ export default async function BlockDetailPage({
   const { block, prescribed } = detail;
   const grouped = groupByWeek(prescribed, block.startDate);
 
+  // Un-logged (deletable) day ids per week, and cumulatively from each week
+  // onward. Days with a logged session (actualWorkoutId set) are never listed,
+  // so the delete tools can't touch training history.
+  const weekDeletableIds = grouped.map((g) =>
+    g.items.filter((it) => it.actualWorkoutId === null).map((it) => it.id),
+  );
+  const fromHereIds = weekDeletableIds.map((_, i) =>
+    weekDeletableIds.slice(i).flat(),
+  );
+
   return (
     <>
       <PageHeader
@@ -157,11 +168,20 @@ export default async function BlockDetailPage({
             the block.
           </div>
         ) : (
-          grouped.map((g) => (
+          grouped.map((g, i) => (
             <section key={g.weekLabel} className="rounded-card bg-card p-4">
-              <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-text-secondary">
-                {g.weekLabel}
-              </h3>
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <h3 className="text-xs font-medium uppercase tracking-wider text-text-secondary">
+                  {g.weekLabel}
+                </h3>
+                <WeekActions
+                  clientId={id}
+                  blockId={blockId}
+                  weekLabel={g.weekLabel}
+                  weekIds={weekDeletableIds[i]}
+                  fromHereIds={fromHereIds[i]}
+                />
+              </div>
               <ul className="flex flex-col divide-y divide-white/[0.04]">
                 {g.items.map((pw) => (
                   <li key={pw.id}>

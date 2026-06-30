@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import {
   prescribedExercises,
@@ -325,6 +325,33 @@ export async function deletePrescribedWorkout(
 
   revalidatePath(`/clients/${clientId}`);
   revalidatePath(`/clients/${clientId}/program/${blockId}`);
+}
+
+// Bulk-delete prescribed (planned) days — used by "Delete week" and
+// "Cut from here." Scoped to the block, and it NEVER deletes a day that has a
+// logged session (actualWorkoutId is set), so training history is protected.
+export async function deletePrescribedWorkouts(
+  clientId: string,
+  blockId: string,
+  ids: string[],
+): Promise<{ deleted: number }> {
+  if (ids.length === 0) return { deleted: 0 };
+
+  const removed = await db
+    .delete(prescribedWorkouts)
+    .where(
+      and(
+        eq(prescribedWorkouts.blockId, blockId),
+        inArray(prescribedWorkouts.id, ids),
+        isNull(prescribedWorkouts.actualWorkoutId),
+      ),
+    )
+    .returning({ id: prescribedWorkouts.id });
+
+  revalidatePath(`/clients/${clientId}`);
+  revalidatePath(`/clients/${clientId}/program`);
+  revalidatePath(`/clients/${clientId}/program/${blockId}`);
+  return { deleted: removed.length };
 }
 
 export async function skipPrescription(
