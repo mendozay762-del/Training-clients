@@ -53,19 +53,23 @@ export function WeekActions({
     });
   }
 
-  if (weekIds.length === 0) return null;
+  const showDeleteWeek = weekIds.length > 0;
+  const showCutFromHere = fromHereIds.length > weekIds.length;
+  if (!showDeleteWeek && !showCutFromHere) return null;
 
   return (
     <div className="flex items-center gap-1">
-      <button
-        type="button"
-        onClick={deleteWeek}
-        disabled={isPending}
-        className="rounded-btn px-2 py-1 text-[11px] font-medium text-text-tertiary hover:bg-card-hover hover:text-accent-red disabled:opacity-50"
-      >
-        Delete week
-      </button>
-      {fromHereIds.length > weekIds.length && (
+      {showDeleteWeek && (
+        <button
+          type="button"
+          onClick={deleteWeek}
+          disabled={isPending}
+          className="rounded-btn px-2 py-1 text-[11px] font-medium text-text-tertiary hover:bg-card-hover hover:text-accent-red disabled:opacity-50"
+        >
+          Delete week
+        </button>
+      )}
+      {showCutFromHere && (
         <button
           type="button"
           onClick={cutFromHere}

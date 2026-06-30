@@ -86,14 +86,16 @@ export function PrescribedActions({
             </Button>
           )
         )}
-        <Button
-          variant="ghost"
-          onClick={onDelete}
-          disabled={isPending}
-          className="text-accent-red hover:text-accent-red"
-        >
-          Delete
-        </Button>
+        {!hasActualWorkout && (
+          <Button
+            variant="ghost"
+            onClick={onDelete}
+            disabled={isPending}
+            className="text-accent-red hover:text-accent-red"
+          >
+            Delete
+          </Button>
+        )}
       </div>
 
       {showSkip && (

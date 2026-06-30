@@ -200,6 +200,8 @@ export async function importFromSheet(
         and(
           eq(prescribedWorkouts.blockId, parsed.blockId),
           inArray(prescribedWorkouts.prescribedFor, targetDates),
+          // Never replace a day that has a logged session — protect history.
+          isNull(prescribedWorkouts.actualWorkoutId),
         ),
       );
     replaced = existing.length;
@@ -322,9 +324,16 @@ export async function deletePrescribedWorkout(
   clientId: string,
   blockId: string,
 ) {
+  // Scoped to the block, and never deletes a day that has a logged session.
   await db
     .delete(prescribedWorkouts)
-    .where(eq(prescribedWorkouts.id, workoutId));
+    .where(
+      and(
+        eq(prescribedWorkouts.id, workoutId),
+        eq(prescribedWorkouts.blockId, blockId),
+        isNull(prescribedWorkouts.actualWorkoutId),
+      ),
+    );
 
   revalidatePath(`/clients/${clientId}`);
   revalidatePath(`/clients/${clientId}/program/${blockId}`);
