@@ -64,6 +64,13 @@
       "when": 1781993738646,
       "tag": "0008_complete_the_fallen",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1782849839051,
+      "tag": "0009_plain_daredevil",
+      "breakpoints": true
     }
   ]
 }

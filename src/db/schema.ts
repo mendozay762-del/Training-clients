@@ -359,6 +359,7 @@ export const prescribedWorkouts = pgTable(
       .notNull()
       .references(() => clients.id, { onDelete: "cascade" }),
     prescribedFor: date("prescribed_for").notNull(),
+    mesocycle: text("mesocycle"),
     name: text("name"),
     notes: text("notes"),
     status: text("status").notNull().default("planned"),

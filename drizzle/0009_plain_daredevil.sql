@@ -1,0 +1,1 @@
+ALTER TABLE "prescribed_workouts" ADD COLUMN "mesocycle" text;

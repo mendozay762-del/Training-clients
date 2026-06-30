@@ -68,6 +68,7 @@ export const importPasteSchema = z.object({
   blockId: z.string().uuid(),
   paste: z.string().min(1, "Paste your sheet contents first"),
   replaceExisting: z.boolean().default(false),
+  mesocycle: optionalText(60),
 });
 
 export type ImportPasteInput = z.infer<typeof importPasteSchema>;

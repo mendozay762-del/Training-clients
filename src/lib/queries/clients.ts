@@ -643,6 +643,7 @@ export async function getBlockDetail(blockId: string) {
     .select({
       id: prescribedWorkouts.id,
       prescribedFor: prescribedWorkouts.prescribedFor,
+      mesocycle: prescribedWorkouts.mesocycle,
       name: prescribedWorkouts.name,
       status: prescribedWorkouts.status,
       actualWorkoutId: prescribedWorkouts.actualWorkoutId,

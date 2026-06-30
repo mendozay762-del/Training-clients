@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { importFromSheet, type ImportSummary } from "@/lib/actions/prescriptions";
 
@@ -14,9 +15,10 @@ const EXAMPLE = `prescribed_for\tworkout_name\texercise_name\tsets\treps\tload\t
 
 interface Props {
   blockId: string;
+  suggestedMesocycle?: string;
 }
 
-export function SheetImportForm({ blockId }: Props) {
+export function SheetImportForm({ blockId, suggestedMesocycle }: Props) {
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<ImportSummary | null>(null);
   const [paste, setPaste] = useState("");
@@ -33,6 +35,25 @@ export function SheetImportForm({ blockId }: Props) {
       className="flex flex-col gap-3"
     >
       <input type="hidden" name="blockId" value={blockId} />
+
+      <div className="flex flex-col gap-1.5">
+        <label
+          htmlFor="mesocycle"
+          className="text-xs font-medium uppercase tracking-wider text-text-secondary"
+        >
+          Mesocycle name
+        </label>
+        <Input
+          id="mesocycle"
+          name="mesocycle"
+          defaultValue={suggestedMesocycle ?? "Mesocycle 1"}
+          placeholder="Mesocycle 2"
+          maxLength={60}
+        />
+        <p className="text-xs text-text-tertiary">
+          Everything you import here is grouped under this mesocycle.
+        </p>
+      </div>
 
       <div className="flex flex-col gap-1.5">
         <label

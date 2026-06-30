@@ -144,7 +144,9 @@ export async function importFromSheet(
     blockId: formData.get("blockId"),
     paste: formData.get("paste") ?? "",
     replaceExisting: formData.get("replaceExisting") === "on",
+    mesocycle: formData.get("mesocycle") ?? "",
   });
+  const mesocycleLabel = parsed.mesocycle?.trim() || "Mesocycle 1";
 
   const [block] = await db
     .select({ id: trainingBlocks.id, clientId: trainingBlocks.clientId })
@@ -224,6 +226,7 @@ export async function importFromSheet(
         clientId: block.clientId,
         prescribedFor: group.prescribedFor,
         name: group.name,
+        mesocycle: mesocycleLabel,
       })
       .returning({ id: prescribedWorkouts.id });
     if (!created) continue;
