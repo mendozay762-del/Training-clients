@@ -5,7 +5,8 @@ import { AddExerciseForm } from "@/components/workouts/add-exercise-form";
 import { SessionNotesForm } from "@/components/workouts/session-notes-form";
 import { DeleteWorkoutButton } from "@/components/workouts/delete-workout-button";
 import { WorkoutDateForm } from "@/components/workouts/workout-date-form";
-import { getWorkoutDetail } from "@/lib/queries/clients";
+import { AddToProgramButton } from "@/components/workouts/add-to-program-button";
+import { getWorkoutDetail, listBlocks } from "@/lib/queries/clients";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,9 @@ export default async function WorkoutDetailPage({
   const data = await getWorkoutDetail(workoutId);
   if (!data || data.workout.clientId !== id) notFound();
 
-  const { workout, exercises } = data;
+  const { workout, exercises, inProgram } = data;
+  // Only manually-logged sessions (not started from the program) can be added.
+  const programs = inProgram ? [] : await listBlocks(id);
 
   return (
     <>
@@ -38,6 +41,14 @@ export default async function WorkoutDetailPage({
             performedOn={String(workout.performedOn)}
           />
         </div>
+
+        {!inProgram && programs.length > 0 && (
+          <AddToProgramButton
+            workoutId={workoutId}
+            clientId={id}
+            programs={programs.map((p) => ({ id: p.id, name: p.name }))}
+          />
+        )}
 
         {exercises.map((ex) => (
           <ExerciseBlock

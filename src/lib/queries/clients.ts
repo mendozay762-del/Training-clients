@@ -344,6 +344,8 @@ export async function getWorkoutDetail(workoutId: string) {
 
   return {
     workout,
+    // Whether this logged session is already attached to a program day.
+    inProgram: Boolean(prescription),
     exercises: exercises.map((ex) => {
       const pe = matchExercise(ex.exerciseName, ex.position);
       return {

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, lte } from "drizzle-orm";
 import { db } from "@/db";
 import {
   prescribedExercises,
@@ -364,6 +364,122 @@ export async function deletePrescribedWorkouts(
   revalidatePath(`/clients/${clientId}/program`);
   revalidatePath(`/clients/${clientId}/program/${blockId}`);
   return { deleted: removed.length };
+}
+
+// The mesocycle a new day on `date` should join: the mesocycle of the latest
+// existing day on or before that date (so it extends the phase it follows);
+// falls back to the earliest day's mesocycle, then "Mesocycle 1".
+async function mesocycleForDate(
+  blockId: string,
+  date: string,
+): Promise<string> {
+  const [before] = await db
+    .select({ mesocycle: prescribedWorkouts.mesocycle })
+    .from(prescribedWorkouts)
+    .where(
+      and(
+        eq(prescribedWorkouts.blockId, blockId),
+        lte(prescribedWorkouts.prescribedFor, date),
+      ),
+    )
+    .orderBy(desc(prescribedWorkouts.prescribedFor))
+    .limit(1);
+  if (before?.mesocycle) return before.mesocycle;
+
+  const [earliest] = await db
+    .select({ mesocycle: prescribedWorkouts.mesocycle })
+    .from(prescribedWorkouts)
+    .where(eq(prescribedWorkouts.blockId, blockId))
+    .orderBy(asc(prescribedWorkouts.prescribedFor))
+    .limit(1);
+  return earliest?.mesocycle ?? "Mesocycle 1";
+}
+
+// Attach a hand-logged workout to a program. If the program already has a
+// planned (un-linked) day on that date, connect to it (the logged session
+// becomes the real one). Otherwise create a completed day on that date in the
+// mesocycle it belongs to. No-op if the workout is already in a program.
+export async function addWorkoutToProgram(
+  workoutId: string,
+  clientId: string,
+  blockId: string,
+) {
+  const [workout] = await db
+    .select({
+      id: workouts.id,
+      clientId: workouts.clientId,
+      performedOn: workouts.performedOn,
+    })
+    .from(workouts)
+    .where(and(eq(workouts.id, workoutId), eq(workouts.clientId, clientId)))
+    .limit(1);
+  if (!workout) throw new Error("Workout not found");
+
+  const revalidate = () => {
+    revalidatePath(`/clients/${clientId}`);
+    revalidatePath(`/clients/${clientId}/program`);
+    revalidatePath(`/clients/${clientId}/program/${blockId}`);
+    revalidatePath(`/clients/${clientId}/workouts`);
+    revalidatePath(`/clients/${clientId}/workouts/${workoutId}`);
+  };
+
+  // Already attached to some program? Leave it alone (idempotent).
+  const [already] = await db
+    .select({ id: prescribedWorkouts.id })
+    .from(prescribedWorkouts)
+    .where(eq(prescribedWorkouts.actualWorkoutId, workoutId))
+    .limit(1);
+  if (already) {
+    revalidate();
+    return;
+  }
+
+  // Confirm the target program belongs to this client.
+  const [block] = await db
+    .select({ id: trainingBlocks.id })
+    .from(trainingBlocks)
+    .where(
+      and(eq(trainingBlocks.id, blockId), eq(trainingBlocks.clientId, clientId)),
+    )
+    .limit(1);
+  if (!block) throw new Error("Program not found");
+
+  // A planned (un-linked) day already on this date? Connect to it.
+  const [planned] = await db
+    .select({ id: prescribedWorkouts.id })
+    .from(prescribedWorkouts)
+    .where(
+      and(
+        eq(prescribedWorkouts.blockId, blockId),
+        eq(prescribedWorkouts.prescribedFor, workout.performedOn),
+        isNull(prescribedWorkouts.actualWorkoutId),
+      ),
+    )
+    .orderBy(asc(prescribedWorkouts.createdAt))
+    .limit(1);
+
+  if (planned) {
+    await db
+      .update(prescribedWorkouts)
+      .set({
+        actualWorkoutId: workoutId,
+        status: "completed",
+        updatedAt: new Date(),
+      })
+      .where(eq(prescribedWorkouts.id, planned.id));
+  } else {
+    const mesocycle = await mesocycleForDate(blockId, workout.performedOn);
+    await db.insert(prescribedWorkouts).values({
+      blockId,
+      clientId,
+      prescribedFor: workout.performedOn,
+      mesocycle,
+      status: "completed",
+      actualWorkoutId: workoutId,
+    });
+  }
+
+  revalidate();
 }
 
 export async function skipPrescription(
