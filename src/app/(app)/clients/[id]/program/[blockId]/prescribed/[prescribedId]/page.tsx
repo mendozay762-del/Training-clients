@@ -30,6 +30,21 @@ function formatLoad(
   return "—";
 }
 
+function formatLoggedSet(s: {
+  reps: number;
+  weightLbs: string | null;
+  rpe: string | null;
+  rir: number | null;
+}): string {
+  const main =
+    s.weightLbs !== null
+      ? `${Number(s.weightLbs)} lb × ${s.reps}`
+      : `${s.reps} reps`;
+  if (s.rir !== null) return `${main} · RIR ${s.rir}`;
+  if (s.rpe !== null) return `${main} · RPE ${Number(s.rpe)}`;
+  return main;
+}
+
 export default async function PrescribedWorkoutPage({
   params,
 }: {
@@ -39,7 +54,8 @@ export default async function PrescribedWorkoutPage({
   const detail = await getPrescribedWorkoutDetail(prescribedId);
   if (!detail || detail.workout.clientId !== id) notFound();
 
-  const { workout, exercises } = detail;
+  const { workout, exercises, logged } = detail;
+  const hasLogged = Boolean(logged && logged.exercises.length > 0);
 
   return (
     <>
@@ -78,22 +94,15 @@ export default async function PrescribedWorkoutPage({
           )}
         </section>
 
-        <section className="rounded-card bg-card p-4">
-          <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-text-secondary">
-            Plan · {exercises.length} exercise
-            {exercises.length === 1 ? "" : "s"}
-          </h3>
-          {exercises.length === 0 ? (
-            <p className="text-sm text-text-tertiary">
-              No exercises in this workout.
-            </p>
-          ) : (
+        {exercises.length > 0 && (
+          <section className="rounded-card bg-card p-4">
+            <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-text-secondary">
+              Plan · {exercises.length} exercise
+              {exercises.length === 1 ? "" : "s"}
+            </h3>
             <ul className="flex flex-col gap-3">
               {exercises.map((ex) => (
-                <li
-                  key={ex.id}
-                  className="rounded-md bg-card-hover/40 p-3"
-                >
+                <li key={ex.id} className="rounded-md bg-card-hover/40 p-3">
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="font-medium">{ex.exerciseName}</span>
                     <span className="text-sm tabnums">
@@ -122,8 +131,48 @@ export default async function PrescribedWorkoutPage({
                 </li>
               ))}
             </ul>
-          )}
-        </section>
+          </section>
+        )}
+
+        {logged && hasLogged && (
+          <section className="rounded-card bg-card p-4">
+            <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-text-secondary">
+              Logged session
+            </h3>
+            <ul className="flex flex-col gap-3">
+              {logged.exercises.map((ex) => (
+                <li key={ex.id} className="rounded-md bg-card-hover/40 p-3">
+                  <div className="font-medium">{ex.exerciseName}</div>
+                  {ex.sets.length === 0 ? (
+                    <p className="mt-1 text-xs text-text-tertiary">No sets.</p>
+                  ) : (
+                    <ul className="mt-1.5 flex flex-col gap-1 text-sm tabnums">
+                      {ex.sets.map((s) => (
+                        <li key={s.id} className="flex items-baseline gap-2">
+                          <span className="w-4 shrink-0 text-xs text-text-tertiary">
+                            {s.isWarmup ? "W" : s.setIndex}
+                          </span>
+                          <span className="text-text-secondary">
+                            {formatLoggedSet(s)}
+                            {s.notes && (
+                              <span className="text-text-tertiary"> — {s.notes}</span>
+                            )}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {exercises.length === 0 && !hasLogged && (
+          <section className="rounded-card bg-card p-6 text-center text-sm text-text-tertiary">
+            No exercises recorded for this day yet.
+          </section>
+        )}
 
         <section className="rounded-card bg-card p-4">
           <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-text-secondary">

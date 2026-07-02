@@ -689,7 +689,37 @@ export async function getPrescribedWorkoutDetail(workoutId: string) {
     .where(eq(prescribedExercises.prescribedWorkoutId, workoutId))
     .orderBy(asc(prescribedExercises.orderIndex));
 
-  return { workout, exercises };
+  // If a session was logged for this day, load the actual performed data so
+  // the program day can show real sets/reps — not just the (possibly empty) plan.
+  const logged = workout.actualWorkoutId
+    ? await loadLoggedSession(workout.actualWorkoutId)
+    : null;
+
+  return { workout, exercises, logged };
+}
+
+async function loadLoggedSession(actualWorkoutId: string) {
+  const loggedExercises = await db
+    .select()
+    .from(workoutExercises)
+    .where(eq(workoutExercises.workoutId, actualWorkoutId))
+    .orderBy(asc(workoutExercises.position));
+  const exIds = loggedExercises.map((e) => e.id);
+  const loggedSets = exIds.length
+    ? await db
+        .select()
+        .from(workoutSets)
+        .where(inArray(workoutSets.exerciseId, exIds))
+        .orderBy(asc(workoutSets.setIndex))
+    : [];
+  return {
+    workoutId: actualWorkoutId,
+    exercises: loggedExercises.map((ex) => ({
+      id: ex.id,
+      exerciseName: ex.exerciseName,
+      sets: loggedSets.filter((s) => s.exerciseId === ex.id),
+    })),
+  };
 }
 
 export async function getTodaysPrescription(clientId: string) {
